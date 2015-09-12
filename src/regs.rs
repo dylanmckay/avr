@@ -1,4 +1,7 @@
 
+
+// TODO: s/addr/num
+
 use std::collections::HashMap;
 
 /// A register value.
@@ -22,6 +25,10 @@ pub const HALF_CARRY_MASK: u8 = (1<<HALF_CARRY_BIT);
 pub const TRANSFER_MASK: u8 = (1<<TRANSFER_BIT);
 pub const INTERRUPT_MASK: u8 = (1<<INTERRUPT_BIT);
 
+/// `SP` low register number.
+pub const SP_LO_NUM: u8 = 32;
+/// `SP` high register number.
+pub const SP_HI_NUM: u8 = 33;
 
 /// The register file.
 #[derive(Clone,Debug)]

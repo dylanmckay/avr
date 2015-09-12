@@ -152,11 +152,25 @@ impl Cpu
     }
 
     pub fn push(&mut self, rd: u8) {
-        unimplemented!()
+        let rd_val = self.register_file.gpr_val(rd).unwrap();
+        let sp = self.register_file.gpr_mut(regs::SP_LO_NUM).unwrap();
+
+        assert!(*sp > 0, "stack overflow");
+
+        self.data_space.set_u8(*sp as usize, rd_val);
+
+        *sp -= 1;
     }
 
     pub fn pop(&mut self, rd: u8) {
-        unimplemented!()
+        let rd_val = self.register_file.gpr_val(rd).unwrap();
+
+        let sp = self.register_file.gpr_mut(regs::SP_LO_NUM).unwrap();
+        *sp += 1;
+
+        assert!(*sp > 0, "stack overflow");
+
+        self.data_space.set_u8(*sp as usize, rd_val);
     }
 
     pub fn swap(&mut self, rd: u8) {
