@@ -1,5 +1,6 @@
 
 use regs::{self,RegisterFile};
+use mem;
 use mcu::Mcu;
 use inst;
 
@@ -7,6 +8,7 @@ use inst;
 pub struct Cpu
 {
     register_file: RegisterFile,
+    data_space: mem::Space,
 }
 
 impl Cpu
@@ -16,6 +18,7 @@ impl Cpu
     {
         Cpu {
             register_file: M::register_file(),
+            data_space: mem::Space::new(M::sram_size()),
         }
     }
 

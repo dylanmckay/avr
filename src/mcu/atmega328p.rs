@@ -17,4 +17,8 @@ impl mcu::Mcu for Mcu
 
         RegisterFile::new(file)
     }
+
+    fn sram_size() -> usize {
+        2 * 1024 // 2KB
+    }
 }
