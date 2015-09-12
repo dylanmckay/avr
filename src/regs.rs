@@ -31,7 +31,7 @@ pub const SP_LO_NUM: u8 = 32;
 pub const SP_HI_NUM: u8 = 33;
 
 /// The register file.
-#[derive(Clone,Debug)]
+#[derive(Clone,Debug,PartialEq,Eq)]
 pub struct RegisterFile
 {
     registers: HashMap<u8, Register>,

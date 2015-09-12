@@ -1,6 +1,4 @@
 
-use std::io::{self,Read};
-
 /// An instruction.
 #[derive(Copy,Clone,Debug,PartialEq,Eq)]
 pub enum Instruction
@@ -11,6 +9,7 @@ pub enum Instruction
     /// Instructions with no arguments.
     /// TODO: give better name.
     N(OpN),
+    K(OpK, u32),
 }
 
 #[derive(Copy,Clone,Debug,PartialEq,Eq)]
@@ -59,6 +58,13 @@ pub enum OpN
     Nop,
 }
 
+#[derive(Copy,Clone,Debug,PartialEq,Eq)]
+pub enum OpK
+{
+    Jmp,
+    Call,
+}
+
 impl Instruction
 {
     pub fn read<I>(mut bytes: I) -> Result<Self,&'static str>
@@ -74,16 +80,29 @@ impl Instruction
              return Ok(i);
         }
 
+        let b3 = bytes.next().unwrap() as u32;
+        let b4 = bytes.next().unwrap() as u32;
+        // must reverse endianess
+        let bits32 = ((bits16 as u32) << 16) | (b4<<8) | (b3<<0);
+
+        if let Some(i) = Self::try_read32(bits32) {
+            return Ok(i);
+        }
+
         Err("unknown instruction")
     }
 
-    pub fn size(self) -> usize {
+    pub fn size(self) -> u8 {
         match self {
             Instruction::RdRr(..) => 2,
             Instruction::RdK(..) => 2,
             Instruction::Rd(..) => 2,
             Instruction::N(op) => match op {
                 OpN::Nop => 2,
+            },
+            Instruction::K(op, k) => match op {
+                OpK::Jmp => 4,
+                OpK::Call => 4,
             },
         }
     }
@@ -96,6 +115,14 @@ impl Instruction
         } else if let Some(i) = Self::try_read_rdk(bits) {
             Some(i)
         } else if let Some(i) = Self::try_read_rdrr(bits) {
+            Some(i)
+        } else {
+            None
+        }
+    }
+
+    pub fn try_read32(bits: u32) -> Option<Self> {
+        if let Some(i) = Self::try_read_k(bits) {
             Some(i)
         } else {
             None
@@ -172,6 +199,31 @@ impl Instruction
         };
 
         Some(Instruction::RdRr(op, rd, rr))
+    }
+
+    /// 32-bits branches.
+    ///  <|1001|010k|kkkk|fffk|kkkk|kkkk|kkkk|kkkk|>
+    fn try_read_k(bits: u32) -> Option<Self> {
+        let opcode = (bits & 0xfe000000) >> 25;
+        let subopcode = (bits & 0xe0000) >> 17;
+
+        let mut k = ((bits & 0x1f00000) >> 20) |
+                     (bits & 0x1ffff);
+
+        // un-left shift the address.
+        k <<= 1;
+
+        if opcode != 0b1001010 {
+            return None;
+        }
+
+        let op = match subopcode {
+            0b110 => OpK::Jmp,
+            0b111 => OpK::Call,
+            _ => { return None; },
+        };
+
+        Some(Instruction::K(op, k))
     }
 }
 

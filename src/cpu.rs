@@ -14,7 +14,7 @@ pub struct Cpu
     data_space: mem::Space,
 
     /// The program counter.
-    pc: usize,
+    pc: u32,
 }
 
 impl Cpu
@@ -205,23 +205,31 @@ impl Cpu
         self.do_rd(rd, |_| imm);
     }
 
+    pub fn jmp(&mut self, k: u32) {
+        self.pc = k;
+    }
+
+    pub fn call(&mut self, k: u32) {
+        unimplemented!();
+    }
+
     pub fn nop(&mut self) { }
 
     fn fetch(&mut self) -> inst::Instruction {
         let bytes = self.program_space.bytes()
-                                      .skip(self.pc)
+                                      .skip(self.pc as usize)
                                       .map(|&a| a);
 
         let inst = inst::Instruction::read(bytes).unwrap();
 
-        self.pc += inst.size();
+        self.pc += inst.size() as u32;
 
         inst
     }
 
     fn execute(&mut self, inst: inst::Instruction) {
         use inst::Instruction;
-        use inst::{OpRd,OpRdK,OpRdRr,OpN};
+        use inst::{OpRd,OpRdK,OpRdRr,OpN,OpK};
 
         match inst {
             Instruction::Rd(op, rd) => match op {
@@ -257,6 +265,10 @@ impl Cpu
             },
             Instruction::N(op) => match op {
                 OpN::Nop => self.nop(),
+            },
+            Instruction::K(op, k) => match op {
+                OpK::Jmp => self.jmp(k),
+                OpK::Call => self.call(k),
             },
         }
     }
