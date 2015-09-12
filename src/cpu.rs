@@ -64,7 +64,7 @@ impl Cpu
     /// lhs = lhs + rhs
     pub fn add(&mut self, lhs: u8, rhs: u8) {
         let sum = self.do_rdrr(lhs, rhs, |a,b| a+b);
-        self.update_status_register(sum);
+        self.update_sreg_arithmetic(sum);
     }
 
     pub fn adc(&mut self, lhs: u8, rhs: u8) {
@@ -72,13 +72,13 @@ impl Cpu
         let constant = if carry { 1 } else { 0 };
 
         let sum = self.do_rdrr(lhs, rhs, |a,b| a+b+constant);
-        self.update_status_register(sum);
+        self.update_sreg_arithmetic(sum);
     }
 
     /// lhs = lhs - rhs
     pub fn sub(&mut self, lhs: u8, rhs: u8) {
         let diff = self.do_rdrr(lhs, rhs, |a,b| a-b);
-        self.update_status_register(diff);
+        self.update_sreg_arithmetic(diff);
     }
 
     pub fn sbc(&mut self, lhs: u8, rhs: u8) {
@@ -86,17 +86,17 @@ impl Cpu
         let constant = if carry { 1 } else { 0 };
 
         let diff = self.do_rdrr(lhs, rhs, |a,b| a-b-constant);
-        self.update_status_register(diff);
+        self.update_sreg_arithmetic(diff);
     }
 
     pub fn subi(&mut self, rd: u8, imm: u8) {
         let diff = self.do_rdi(rd, |d| d-imm as u16);
-        self.update_status_register(diff);
+        self.update_sreg_arithmetic(diff);
     }
 
     pub fn sbci(&mut self, rd: u8, imm: u8) {
         let diff = self.do_rdi(rd, |d| d-imm as u16);
-        self.update_status_register(diff);
+        self.update_sreg_arithmetic(diff);
     }
 
     /// R1:R0 = Rd * Rr
@@ -109,7 +109,7 @@ impl Cpu
         *self.register_file.gpr_mut(0).unwrap() = lo;
         *self.register_file.gpr_mut(1).unwrap() = hi;
 
-        self.update_status_register(product);
+        self.update_sreg_arithmetic(product);
     }
 
     pub fn and(&mut self, lhs: u8, rhs: u8) {
@@ -182,7 +182,10 @@ impl Cpu
     }
 
     pub fn cp(&mut self, rd: u8, rr: u8) {
-        unimplemented!()
+        let rd_val = self.register_file.gpr_val(rd).unwrap() as u16;
+        let rr_val = self.register_file.gpr_val(rr).unwrap() as u16;
+
+        self.update_sreg_cp(rd_val, rr_val);
     }
 
     pub fn cpc(&mut self, rd: u8, rr: u8) {
@@ -198,7 +201,7 @@ impl Cpu
     }
 
     pub fn ldi(&mut self, rd: u8, imm: u8) {
-        unimplemented!()
+        self.do_rd(rd, |_| imm);
     }
 
     pub fn nop(&mut self) { }
@@ -258,12 +261,26 @@ impl Cpu
     }
 
     /// Updates the `V`, `C`, `H`, `N`, `Z`, and `S` status flags.
-    fn update_status_register(&mut self, val: u16) {
+    fn update_sreg_arithmetic(&mut self, val: u16) {
         self.update_overflow_flag(val);
         self.update_carry_flag(val);
         self.update_half_carry_flag(val);
         self.update_negative_flag(val);
         self.update_zero_flag(val);
+    }
+
+    /// Updates the `V`, `C`, `H`, `N`, `Z`, and `S` status flags.
+    fn update_sreg_cp(&mut self, rd_val: u16, rr_val: u16) {
+        let val = rd_val-rr_val;
+
+        self.update_overflow_flag(val);
+        self.update_negative_flag(val);
+        self.update_zero_flag(val);
+
+        let is_carry = (rr_val as i16).abs() > (rd_val as i16).abs();
+        self.update_status_flag_bit(regs::CARRY_MASK, is_carry);
+
+        // TODO: Set half carry flag
     }
 
     /// Sets the overflow flag if `val` overflows a `u8`.

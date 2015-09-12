@@ -53,6 +53,11 @@ impl RegisterFile
         self.registers.get_mut(&addr)
     }
 
+    pub fn gpr_val(&self, addr: u8)
+        -> Option<Register> {
+        self.gpr(addr).map(|&a| a)
+    }
+
     pub fn gpr_pair(&self, addr: u8)
         -> Option<(&Register,&Register)> {
         assert!(addr % 2 == 0,
