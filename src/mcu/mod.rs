@@ -7,5 +7,7 @@ use regs::RegisterFile;
 pub trait Mcu
 {
     fn register_file() -> RegisterFile;
+
+    fn flash_size() -> usize;
     fn sram_size() -> usize;
 }

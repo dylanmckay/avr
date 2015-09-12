@@ -39,4 +39,23 @@ impl Space
         (hi << 8) | lo
     }
 
+    pub fn bytes<'a>(&'a self) -> std::slice::Iter<'a,u8> {
+        self.data.iter()
+    }
+
+    pub fn bytes_mut<'a>(&'a mut self) -> std::slice::IterMut<'a,u8> {
+        self.data.iter_mut()
+    }
+
+    pub fn load<I>(&mut self, mut bytes: I)
+        where I: Iterator<Item=u8> {
+
+        for byte in self.data.iter_mut() {
+            if let Some(b) = bytes.next() {
+                *byte = b;
+            } else {
+                 break;
+            }
+        }
+    }
 }

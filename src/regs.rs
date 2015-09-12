@@ -24,6 +24,7 @@ pub const INTERRUPT_MASK: u8 = (1<<INTERRUPT_BIT);
 
 
 /// The register file.
+#[derive(Clone,Debug)]
 pub struct RegisterFile
 {
     registers: HashMap<u8, Register>,

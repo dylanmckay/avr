@@ -8,6 +8,9 @@ pub enum Instruction
     Rd(OpRd, u8),
     RdK(OpRdK, u8, u8),
     RdRr(OpRdRr, u8, u8),
+    /// Instructions with no arguments.
+    /// TODO: give better name.
+    N(OpN),
 }
 
 #[derive(Copy,Clone,Debug,PartialEq,Eq)]
@@ -50,13 +53,19 @@ pub enum OpRdRr
     Mov,
 }
 
+#[derive(Copy,Clone,Debug,PartialEq,Eq)]
+pub enum OpN
+{
+    Nop,
+}
+
 impl Instruction
 {
-    pub fn read(reader: &mut io::Read) -> Result<Self,&'static str> {
-        let mut bytes = reader.bytes();
+    pub fn read<I>(mut bytes: I) -> Result<Self,&'static str>
+        where I: Iterator<Item=u8> {
 
-        let b1 = bytes.next().unwrap().unwrap();
-        let b2 = bytes.next().unwrap().unwrap();
+        let b1 = bytes.next().unwrap();
+        let b2 = bytes.next().unwrap();
 
         // must reverse endianess
         let bits16 = ((b2 as u16)<<8) | (b1 as u16);
@@ -68,8 +77,21 @@ impl Instruction
         Err("unknown instruction")
     }
 
+    pub fn size(self) -> usize {
+        match self {
+            Instruction::RdRr(..) => 2,
+            Instruction::RdK(..) => 2,
+            Instruction::Rd(..) => 2,
+            Instruction::N(op) => match op {
+                OpN::Nop => 2,
+            },
+        }
+    }
+
     fn try_read16(bits: u16) -> Option<Self> {
-        if let Some(i) = Self::try_read_rd(bits) {
+        if bits == 0 {
+            Some(Instruction::N(OpN::Nop))
+        } else if let Some(i) = Self::try_read_rd(bits) {
             Some(i)
         } else if let Some(i) = Self::try_read_rdk(bits) {
             Some(i)

@@ -5,10 +5,16 @@ use mcu::Mcu;
 use inst;
 
 /// The AVR CPU.
+/// TODO: this should probably be renamed to Mcu (it owns the RAM, etc).
 pub struct Cpu
 {
     register_file: RegisterFile,
+
+    program_space: mem::Space,
     data_space: mem::Space,
+
+    /// The program counter.
+    pc: usize,
 }
 
 impl Cpu
@@ -18,48 +24,29 @@ impl Cpu
     {
         Cpu {
             register_file: M::register_file(),
+            program_space: mem::Space::new(M::flash_size()),
             data_space: mem::Space::new(M::sram_size()),
+
+            pc: 0,
         }
     }
 
-    pub fn execute(&mut self, inst: inst::Instruction) {
-        use inst::Instruction;
-        use inst::{OpRd,OpRdK,OpRdRr};
+    pub fn load_program_space<I>(&mut self, bytes: I)
+        where I: Iterator<Item=u8> {
 
-        match inst {
-            Instruction::Rd(op, rd) => match op {
-                OpRd::Inc => self.inc(rd),
-                OpRd::Dec => self.dec(rd),
-                OpRd::Com => self.com(rd),
-                OpRd::Neg => self.neg(rd),
-                OpRd::Push => self.push(rd),
-                OpRd::Pop => self.pop(rd),
-                OpRd::Swap => self.swap(rd),
-            },
-            Instruction::RdK(op, rd, k) => match op {
-                OpRdK::Subi => self.subi(rd, k),
-                OpRdK::Sbci => self.sbci(rd, k),
-                OpRdK::Andi => self.andi(rd, k),
-                OpRdK::Ori => self.ori(rd, k),
-                OpRdK::Cpi => self.cpi(rd, k),
-                OpRdK::Ldi => self.ldi(rd, k),
-            },
-            Instruction::RdRr(op, rd, rr) => match op {
-                OpRdRr::Add => self.add(rd, rr),
-                OpRdRr::Adc => self.adc(rd, rr),
-                OpRdRr::Sub => self.sub(rd, rr),
-                OpRdRr::Sbc => self.sbc(rd, rr),
-                OpRdRr::Mul => self.mul(rd, rr),
-                OpRdRr::And => self.and(rd, rr),
-                OpRdRr::Or => self.or(rd, rr),
-                OpRdRr::Eor => self.eor(rd, rr),
-                OpRdRr::Cpse => self.cpse(rd, rr),
-                OpRdRr::Cp => self.cp(rd, rr),
-                OpRdRr::Cpc => self.cpc(rd, rr),
-                OpRdRr::Mov => self.mov(rd, rr),
-            },
-        }
+        self.program_space.load(bytes);
     }
+
+    pub fn tick(&mut self) {
+        let inst = self.fetch();
+
+        println!("Executing {:?}", inst);
+        self.execute(inst);
+    }
+
+    pub fn register_file(&self) -> &RegisterFile { &self.register_file }
+    pub fn program_space(&self) -> &mem::Space { &self.program_space }
+    pub fn data_space(&self) -> &mem::Space { &self.data_space }
 
     /// lhs = lhs + rhs
     pub fn add(&mut self, lhs: u8, rhs: u8) {
@@ -205,6 +192,60 @@ impl Cpu
     }
 
     pub fn nop(&mut self) { }
+
+    fn fetch(&mut self) -> inst::Instruction {
+        let bytes = self.program_space.bytes()
+                                      .skip(self.pc)
+                                      .map(|&a| a);
+
+        let inst = inst::Instruction::read(bytes).unwrap();
+
+        self.pc += inst.size();
+
+        inst
+    }
+
+    fn execute(&mut self, inst: inst::Instruction) {
+        use inst::Instruction;
+        use inst::{OpRd,OpRdK,OpRdRr,OpN};
+
+        match inst {
+            Instruction::Rd(op, rd) => match op {
+                OpRd::Inc => self.inc(rd),
+                OpRd::Dec => self.dec(rd),
+                OpRd::Com => self.com(rd),
+                OpRd::Neg => self.neg(rd),
+                OpRd::Push => self.push(rd),
+                OpRd::Pop => self.pop(rd),
+                OpRd::Swap => self.swap(rd),
+            },
+            Instruction::RdK(op, rd, k) => match op {
+                OpRdK::Subi => self.subi(rd, k),
+                OpRdK::Sbci => self.sbci(rd, k),
+                OpRdK::Andi => self.andi(rd, k),
+                OpRdK::Ori => self.ori(rd, k),
+                OpRdK::Cpi => self.cpi(rd, k),
+                OpRdK::Ldi => self.ldi(rd, k),
+            },
+            Instruction::RdRr(op, rd, rr) => match op {
+                OpRdRr::Add => self.add(rd, rr),
+                OpRdRr::Adc => self.adc(rd, rr),
+                OpRdRr::Sub => self.sub(rd, rr),
+                OpRdRr::Sbc => self.sbc(rd, rr),
+                OpRdRr::Mul => self.mul(rd, rr),
+                OpRdRr::And => self.and(rd, rr),
+                OpRdRr::Or => self.or(rd, rr),
+                OpRdRr::Eor => self.eor(rd, rr),
+                OpRdRr::Cpse => self.cpse(rd, rr),
+                OpRdRr::Cp => self.cp(rd, rr),
+                OpRdRr::Cpc => self.cpc(rd, rr),
+                OpRdRr::Mov => self.mov(rd, rr),
+            },
+            Instruction::N(op) => match op {
+                OpN::Nop => self.nop(),
+            },
+        }
+    }
 
     fn do_rd<F>(&mut self, rd: u8, mut f: F)
         where F: FnMut(u8) -> u8 {
