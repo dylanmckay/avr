@@ -1,6 +1,5 @@
 
-use mem::Address;
-use regs::{self,Register,RegisterFile};
+use regs::{self,RegisterFile};
 use mcu::Mcu;
 use inst;
 
@@ -66,7 +65,11 @@ impl Cpu
     }
 
     pub fn adc(&mut self, lhs: u8, rhs: u8) {
-        unimplemented!()
+        let carry = self.register_file.sreg_flag(regs::CARRY_MASK);
+        let constant = if carry { 1 } else { 0 };
+
+        let sum = self.do_rdrr(lhs, rhs, |a,b| a+b+constant);
+        self.update_status_register(sum);
     }
 
     /// lhs = lhs - rhs
@@ -76,7 +79,11 @@ impl Cpu
     }
 
     pub fn sbc(&mut self, lhs: u8, rhs: u8) {
-        unimplemented!()
+        let carry = self.register_file.sreg_flag(regs::CARRY_MASK);
+        let constant = if carry { 1 } else { 0 };
+
+        let diff = self.do_rdrr(lhs, rhs, |a,b| a-b-constant);
+        self.update_status_register(diff);
     }
 
     pub fn subi(&mut self, rd: u8, imm: u8) {
@@ -85,13 +92,21 @@ impl Cpu
     }
 
     pub fn sbci(&mut self, rd: u8, imm: u8) {
-        // TODO: set carry flag
         let diff = self.do_rdi(rd, |d| d-imm as u16);
         self.update_status_register(diff);
     }
 
+    /// R1:R0 = Rd * Rr
     pub fn mul(&mut self, rd: u8, rr: u8) {
-        unimplemented!()
+        let product = (rd as u16) * (rr as u16);
+
+        let lo = (product & 0x00ff) as u8;
+        let hi = ((product & 0xff00) >> 8) as u8;
+
+        *self.register_file.gpr_mut(0).unwrap() = lo;
+        *self.register_file.gpr_mut(1).unwrap() = hi;
+
+        self.update_status_register(product);
     }
 
     pub fn and(&mut self, lhs: u8, rhs: u8) {

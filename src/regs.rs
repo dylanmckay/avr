@@ -53,6 +53,29 @@ impl RegisterFile
         self.registers.get_mut(&addr)
     }
 
+    pub fn gpr_pair(&self, addr: u8)
+        -> Option<(&Register,&Register)> {
+        assert!(addr % 2 == 0,
+                "GPR pairs must be even");
+
+        let lo = self.gpr(addr).unwrap();
+        let hi = self.gpr(addr+1).unwrap();
+
+        Some((lo, hi))
+    }
+
+    pub fn gpr_pair_val(&self, addr: u8)
+        -> Option<u16> {
+        let (lo,hi) = self.gpr_pair(addr).unwrap();
+        let val = ((*hi as u16) << 8) | *lo as u16;
+        Some(val)
+    }
+
     pub fn sreg(&self) -> &Register { &self.sreg }
     pub fn sreg_mut(&mut self) -> &mut Register { &mut self.sreg }
+
+    /// Checks if a flag is set in SREG.
+    pub fn sreg_flag(&self, mask: u8) -> bool {
+        (self.sreg & mask) == mask
+    }
 }
