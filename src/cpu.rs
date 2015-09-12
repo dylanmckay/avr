@@ -229,47 +229,36 @@ impl Cpu
 
     fn execute(&mut self, inst: inst::Instruction) {
         use inst::Instruction;
-        use inst::{OpRd,OpRdK,OpRdRr,OpN,OpK};
 
         match inst {
-            Instruction::Rd(op, rd) => match op {
-                OpRd::Inc => self.inc(rd),
-                OpRd::Dec => self.dec(rd),
-                OpRd::Com => self.com(rd),
-                OpRd::Neg => self.neg(rd),
-                OpRd::Push => self.push(rd),
-                OpRd::Pop => self.pop(rd),
-                OpRd::Swap => self.swap(rd),
-            },
-            Instruction::RdK(op, rd, k) => match op {
-                OpRdK::Subi => self.subi(rd, k),
-                OpRdK::Sbci => self.sbci(rd, k),
-                OpRdK::Andi => self.andi(rd, k),
-                OpRdK::Ori => self.ori(rd, k),
-                OpRdK::Cpi => self.cpi(rd, k),
-                OpRdK::Ldi => self.ldi(rd, k),
-            },
-            Instruction::RdRr(op, rd, rr) => match op {
-                OpRdRr::Add => self.add(rd, rr),
-                OpRdRr::Adc => self.adc(rd, rr),
-                OpRdRr::Sub => self.sub(rd, rr),
-                OpRdRr::Sbc => self.sbc(rd, rr),
-                OpRdRr::Mul => self.mul(rd, rr),
-                OpRdRr::And => self.and(rd, rr),
-                OpRdRr::Or => self.or(rd, rr),
-                OpRdRr::Eor => self.eor(rd, rr),
-                OpRdRr::Cpse => self.cpse(rd, rr),
-                OpRdRr::Cp => self.cp(rd, rr),
-                OpRdRr::Cpc => self.cpc(rd, rr),
-                OpRdRr::Mov => self.mov(rd, rr),
-            },
-            Instruction::N(op) => match op {
-                OpN::Nop => self.nop(),
-            },
-            Instruction::K(op, k) => match op {
-                OpK::Jmp => self.jmp(k),
-                OpK::Call => self.call(k),
-            },
+            Instruction::Inc(rd) => self.inc(rd),
+            Instruction::Dec(rd) => self.dec(rd),
+            Instruction::Com(rd) => self.com(rd),
+            Instruction::Neg(rd) => self.neg(rd),
+            Instruction::Push(rd) => self.push(rd),
+            Instruction::Pop(rd) => self.pop(rd),
+            Instruction::Swap(rd) => self.swap(rd),
+            Instruction::Subi(rd, k) => self.subi(rd, k),
+            Instruction::Sbci(rd, k) => self.sbci(rd, k),
+            Instruction::Andi(rd, k) => self.andi(rd, k),
+            Instruction::Ori(rd, k) => self.ori(rd, k),
+            Instruction::Cpi(rd, k) => self.cpi(rd, k),
+            Instruction::Ldi(rd, k) => self.ldi(rd, k),
+            Instruction::Add(rd, rr) => self.add(rd, rr),
+            Instruction::Adc(rd, rr) => self.adc(rd, rr),
+            Instruction::Sub(rd, rr) => self.sub(rd, rr),
+            Instruction::Sbc(rd, rr) => self.sbc(rd, rr),
+            Instruction::Mul(rd, rr) => self.mul(rd, rr),
+            Instruction::And(rd, rr) => self.and(rd, rr),
+            Instruction::Or(rd, rr) => self.or(rd, rr),
+            Instruction::Eor(rd, rr) => self.eor(rd, rr),
+            Instruction::Cpse(rd, rr) => self.cpse(rd, rr),
+            Instruction::Cp(rd, rr) => self.cp(rd, rr),
+            Instruction::Cpc(rd, rr) => self.cpc(rd, rr),
+            Instruction::Mov(rd, rr) => self.mov(rd, rr),
+            Instruction::Nop => self.nop(),
+            Instruction::Jmp(k) => self.jmp(k),
+            Instruction::Call(k) => self.call(k),
         }
     }
 

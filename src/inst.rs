@@ -1,68 +1,45 @@
 
+pub type Gpr = u8;
+pub type GprPair = u8;
+pub type Address = u32;
+pub type RelativeAddress = u32;
+
 /// An instruction.
 #[derive(Copy,Clone,Debug,PartialEq,Eq)]
 pub enum Instruction
 {
-    Rd(OpRd, u8),
-    RdK(OpRdK, u8, u8),
-    RdRr(OpRdRr, u8, u8),
-    /// Instructions with no arguments.
-    /// TODO: give better name.
-    N(OpN),
-    K(OpK, u32),
-}
+    Inc(Gpr),
+    Dec(Gpr),
+    Com(Gpr),
+    Neg(Gpr),
+    Push(Gpr),
+    Pop(Gpr),
+    Swap(Gpr),
 
-#[derive(Copy,Clone,Debug,PartialEq,Eq)]
-pub enum OpRd
-{
-    Inc,
-    Dec,
-    Com,
-    Neg,
-    Push,
-    Pop,
-    Swap,
-}
+    Subi(Gpr, u8),
+    Sbci(Gpr, u8),
+    Andi(Gpr, u8),
+    Ori(Gpr, u8),
+    Cpi(Gpr, u8),
+    Ldi(Gpr, u8),
 
-#[derive(Copy,Clone,Debug,PartialEq,Eq)]
-pub enum OpRdK
-{
-    Subi,
-    Sbci,
-    Andi,
-    Ori,
-    Cpi,
-    Ldi,
-}
+    Add(Gpr, Gpr),
+    Adc(Gpr, Gpr),
+    Sub(Gpr, Gpr),
+    Sbc(Gpr, Gpr),
+    Mul(Gpr, Gpr),
+    And(Gpr, Gpr),
+    Or(Gpr, Gpr),
+    Eor(Gpr, Gpr),
+    Cpse(Gpr, Gpr),
+    Cp(Gpr, Gpr),
+    Cpc(Gpr, Gpr),
+    Mov(Gpr, Gpr),
 
-#[derive(Copy,Clone,Debug,PartialEq,Eq)]
-pub enum OpRdRr
-{
-    Add,
-    Adc,
-    Sub,
-    Sbc,
-    Mul,
-    And,
-    Or,
-    Eor,
-    Cpse,
-    Cp,
-    Cpc,
-    Mov,
-}
+    Jmp(u32),
+    Call(u32),
 
-#[derive(Copy,Clone,Debug,PartialEq,Eq)]
-pub enum OpN
-{
     Nop,
-}
-
-#[derive(Copy,Clone,Debug,PartialEq,Eq)]
-pub enum OpK
-{
-    Jmp,
-    Call,
 }
 
 impl Instruction
@@ -94,22 +71,15 @@ impl Instruction
 
     pub fn size(self) -> u8 {
         match self {
-            Instruction::RdRr(..) => 2,
-            Instruction::RdK(..) => 2,
-            Instruction::Rd(..) => 2,
-            Instruction::N(op) => match op {
-                OpN::Nop => 2,
-            },
-            Instruction::K(op, k) => match op {
-                OpK::Jmp => 4,
-                OpK::Call => 4,
-            },
+            Instruction::Jmp(..) => 4,
+            Instruction::Call(..) => 4,
+            _ => 2,
         }
     }
 
     fn try_read16(bits: u16) -> Option<Self> {
         if bits == 0 {
-            Some(Instruction::N(OpN::Nop))
+            Some(Instruction::Nop)
         } else if let Some(i) = Self::try_read_rd(bits) {
             Some(i)
         } else if let Some(i) = Self::try_read_rdk(bits) {
@@ -136,42 +106,38 @@ impl Instruction
 
         let rd = ((bits & 0b0000000111110000) >> 4) as u8;
 
-        let op = match opcode {
-            0b10010100011 => OpRd::Inc,
-            0b10010101010 => OpRd::Dec,
-            0b10010100000 => OpRd::Com,
-            0b10010100001 => OpRd::Neg,
-            0b10010011111 => OpRd::Push,
-            0b10010001111 => OpRd::Pop,
-            0b10010100010 => OpRd::Swap,
-            _ => { return None; },
-        };
-
-        Some(Instruction::Rd(op, rd))
+        match opcode {
+            0b10010100011 => Some(Instruction::Inc(rd)),
+            0b10010101010 => Some(Instruction::Dec(rd)),
+            0b10010100000 => Some(Instruction::Com(rd)),
+            0b10010100001 => Some(Instruction::Neg(rd)),
+            0b10010011111 => Some(Instruction::Push(rd)),
+            0b10010001111 => Some(Instruction::Pop(rd)),
+            0b10010100010 => Some(Instruction::Swap(rd)),
+            _ => None,
+        }
     }
 
     /// rdk: `<|opcode|KKKK|dddd|KKKK|>`
     fn try_read_rdk(bits: u16) -> Option<Self> {
         let opcode = (bits & 0b1111000000000000) >> 12;
 
-        let mut rd =  ((bits & 0b0000000011110000) >> 4) as u8;
-        let k =  (((bits & 0b0000111100000000) >> 4) |
-                  ((bits & 0b0000000000001111) >> 0)) as u8;
+        let mut rd = ((bits & 0b0000000011110000) >> 4) as u8;
+        let k     =  (((bits & 0b0000111100000000) >> 4) |
+                      ((bits & 0b0000000000001111) >> 0)) as u8;
 
         // RDk registers start from r16 (so range is r16-r31).
         rd += 16;
 
-        let op = match opcode {
-            0b0101 => OpRdK::Subi,
-            0b0100 => OpRdK::Sbci,
-            0b0111 => OpRdK::Andi,
-            0b0110 => OpRdK::Ori,
-            0b0011 => OpRdK::Cpi,
-            0b1110 => OpRdK::Ldi,
-            _ => { return None; },
-        };
-
-        Some(Instruction::RdK(op, rd, k))
+        match opcode {
+            0b0101 => Some(Instruction::Subi(rd, k)),
+            0b0100 => Some(Instruction::Sbci(rd, k)),
+            0b0111 => Some(Instruction::Andi(rd, k)),
+            0b0110 => Some(Instruction::Ori(rd, k)),
+            0b0011 => Some(Instruction::Cpi(rd, k)),
+            0b1110 => Some(Instruction::Ldi(rd, k)),
+            _ => None,
+        }
     }
 
     /// rdrr: `<|opcode|ffrd|dddd|rrrr|>`
@@ -182,23 +148,21 @@ impl Instruction
         let rr = (((bits & 0b0000001000000000) >> 4) |
                   (bits & 0b0000000000001111)) as u8;
 
-        let op = match opcode {
-            0b000011 => OpRdRr::Add,
-            0b000111 => OpRdRr::Adc,
-            0b000110 => OpRdRr::Sub,
-            0b000010 => OpRdRr::Sbc,
-            0b100111 => OpRdRr::Mul,
-            0b001000 => OpRdRr::And,
-            0b001010 => OpRdRr::Or,
-            0b001001 => OpRdRr::Eor,
-            0b000100 => OpRdRr::Cpse,
-            0b000101 => OpRdRr::Cp,
-            0b000001 => OpRdRr::Cpc,
-            0b001011 => OpRdRr::Mov,
-            _ => { return None; },
-        };
-
-        Some(Instruction::RdRr(op, rd, rr))
+        match opcode {
+            0b000011 => Some(Instruction::Add(rd, rr)),
+            0b000111 => Some(Instruction::Adc(rd, rr)),
+            0b000110 => Some(Instruction::Sub(rd, rr)),
+            0b000010 => Some(Instruction::Sbc(rd, rr)),
+            0b100111 => Some(Instruction::Mul(rd, rr)),
+            0b001000 => Some(Instruction::And(rd, rr)),
+            0b001010 => Some(Instruction::Or(rd, rr)),
+            0b001001 => Some(Instruction::Eor(rd, rr)),
+            0b000100 => Some(Instruction::Cpse(rd, rr)),
+            0b000101 => Some(Instruction::Cp(rd, rr)),
+            0b000001 => Some(Instruction::Cpc(rd, rr)),
+            0b001011 => Some(Instruction::Mov(rd, rr)),
+            _ => None,
+        }
     }
 
     /// 32-bits branches.
@@ -217,14 +181,11 @@ impl Instruction
             return None;
         }
 
-        let op = match subopcode {
-            0b110 => OpK::Jmp,
-            0b111 => OpK::Call,
-            _ => { return None; },
-        };
-
-        Some(Instruction::K(op, k))
+        match subopcode {
+            0b110 => Some(Instruction::Jmp(k)),
+            0b111 => Some(Instruction::Call(k)),
+            _ => None,
+        }
     }
 }
 
-// add: 0000 11rd dddd rrrr
