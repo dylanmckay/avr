@@ -41,6 +41,13 @@ pub enum Instruction
 
     Jmp(u32),
     Call(u32),
+    Rjmp(i16),
+    Rcall(i16),
+
+    /// Load program memory.
+    /// `GprPair` is always the `Z` register.
+    /// The `bool` is whether to postincrement.
+    Lpm(Gpr, GprPair, bool),
 
     Nop,
     Ret,
@@ -89,6 +96,9 @@ impl Instruction
             Some(Instruction::Ret)
         } else if bits == 0x9518 {
             Some(Instruction::Reti)
+        } else if bits == 0x95C8 {
+            // LPM (r0, Z implied).
+            Some(Instruction::Lpm(0, 30, false))
         } else if let Some(i) = Self::try_read_rd(bits) {
             Some(i)
         } else if let Some(i) = Self::try_read_rdk(bits) {
@@ -96,6 +106,8 @@ impl Instruction
         } else if let Some(i) = Self::try_read_rdrr(bits) {
             Some(i)
         } else if let Some(i) = Self::try_read_rda(bits) {
+            Some(i)
+        } else if let Some(i) = Self::try_read_k16(bits) {
             Some(i)
         } else {
             None
@@ -199,8 +211,38 @@ impl Instruction
 
     }
 
+    /// `LPM` instructions.
+    /// `<1001|000d|dddd|010f>`
+    /// `f` is postincrement bit.
+    fn try_read_rdz(bits: u16) -> Option<Self> {
+        let opcode = (bits & 0b1111111000000000) >> 9;
+        let sub_op = (bits & 0b1);
+
+        let rd = ((bits & 0x1f0) >> 4) as u8;
+
+        let postinc = sub_op==1;
+
+        match opcode {
+            0b1001000 => Some(Instruction::Lpm(rd, 30, postinc)),
+            _ => None,
+        }
+    }
+
+    /// 16-bit relative branches.
+    /// `<ffff|kkkk|kkkk|kkkk>`.
+    fn try_read_k16(bits: u16) -> Option<Self> {
+        let opcode = (bits & 0xf000) >> 12;
+        let k = (bits & 0x0fff) as i16;
+
+        match opcode {
+            0b1100 => Some(Instruction::Rjmp(k)),
+            0b1101 => Some(Instruction::Rcall(k)),
+            _ => None,
+        }
+    }
+
     /// 32-bit branches.
-    ///  <|1001|010k|kkkk|fffk|kkkk|kkkk|kkkk|kkkk|>
+    /// <|1001|010k|kkkk|fffk|kkkk|kkkk|kkkk|kkkk|>
     fn try_read_k32(bits: u32) -> Option<Self> {
         let opcode = (bits & 0xfe000000) >> 25;
         let subopcode = (bits & 0xe0000) >> 17;

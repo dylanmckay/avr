@@ -230,6 +230,15 @@ impl Mcu
         self.pc = k;
     }
 
+    pub fn rjmp(&mut self, k: i16) {
+        let pc = self.pc as i32 + k as i32;
+        self.pc = pc as u32;
+    }
+
+    pub fn rcall(&mut self, k: i16) {
+        unimplemented!();
+    }
+
     pub fn ret(&mut self) {
         let mut sp = self.register_file.gpr_pair_val(regs::SP_LO_NUM).unwrap();
 
@@ -246,6 +255,10 @@ impl Mcu
         self.ret();
 
         self.register_file.sreg_flag_set(regs::INTERRUPT_FLAG);
+    }
+
+    pub fn lpm(&mut self, rd: u8, z: u8, postinc: bool) {
+        unimplemented!();
     }
 
     pub fn nop(&mut self) { }
@@ -316,6 +329,9 @@ impl Mcu
             Instruction::Out(a, rd) => self.out(a, rd),
             Instruction::Jmp(k) => self.jmp(k),
             Instruction::Call(k) => self.call(k),
+            Instruction::Rjmp(k) => self.rjmp(k),
+            Instruction::Rcall(k) => self.rcall(k),
+            Instruction::Lpm(rd, z, postinc) => self.lpm(rd, z, postinc),
         }
     }
 
