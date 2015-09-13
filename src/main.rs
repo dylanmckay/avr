@@ -1,21 +1,21 @@
 
 pub mod regs;
-pub mod cpu;
+pub mod mcu;
 pub mod mem;
 pub mod inst;
 
-pub mod mcu;
+pub mod chips;
 
 fn main() {
     use std::io::Read;
-    let mut cpu = cpu::Cpu::new::<mcu::atmega328p::Mcu>();
+    let mut mcu = mcu::Mcu::new::<chips::atmega328p::Chip>();
 
     let program_file = std::fs::File::open("/home/dylan/avr.bin").unwrap();
     let program_bytes = program_file.bytes().map(|a| a.unwrap());
-    cpu.load_program_space(program_bytes);
+    mcu.load_program_space(program_bytes);
 
     for _ in 0..20 {
-        cpu.tick();
+        mcu.tick();
     }
 
 }

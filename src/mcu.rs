@@ -1,36 +1,37 @@
 
 use regs::{self,RegisterFile};
 use mem;
-use mcu::Mcu;
+use chips::Chip;
 use inst;
 
-
-pub const SPACE_REGISTER_OFFSET: u16 = 0;
-pub const SPACE_IO_OFFSET: u16 = 0x20;
-pub const SPACE_DATA_OFFSET: u16 = 0x60;
+/// The address that register space is mapped to in SRAM.
+pub const SRAM_REGISTER_OFFSET: u16 = 0;
+/// The address that IO space is mapped to in SRAM.
+pub const SRAM_IO_OFFSET: u16 = 0x20;
+/// The address that data space is mapped to in SRAM.
+pub const SRAM_DATA_OFFSET: u16 = 0x60;
 
 /// The AVR CPU.
-/// TODO: this should probably be renamed to Mcu (it owns the RAM, etc).
-pub struct Cpu
+pub struct Mcu
 {
     register_file: RegisterFile,
 
     program_space: mem::Space,
-    data_space: mem::Space,
+    sram: mem::Space,
 
     /// The program counter.
     pc: u32,
 }
 
-impl Cpu
+impl Mcu
 {
     pub fn new<M>() -> Self
-        where M: Mcu
+        where M: Chip
     {
-        Cpu {
+        Mcu {
             register_file: M::register_file(),
             program_space: mem::Space::new(M::flash_size()),
-            data_space: mem::Space::new(M::sram_size()),
+            sram: mem::Space::new(M::sram_size()),
 
             pc: 0,
         }
@@ -51,7 +52,7 @@ impl Cpu
 
     pub fn register_file(&self) -> &RegisterFile { &self.register_file }
     pub fn program_space(&self) -> &mem::Space { &self.program_space }
-    pub fn data_space(&self) -> &mem::Space { &self.data_space }
+    pub fn sram(&self) -> &mem::Space { &self.sram }
 
     /// lhs = lhs + rhs
     pub fn add(&mut self, lhs: u8, rhs: u8) {
@@ -162,7 +163,7 @@ impl Cpu
 
         assert!(*sp > 0, "stack overflow");
 
-        self.data_space.set_u8(*sp as usize, rd_val);
+        self.sram.set_u8(*sp as usize, rd_val);
 
         *sp -= 1;
     }
@@ -175,7 +176,7 @@ impl Cpu
 
         assert!(*sp > 0, "stack overflow");
 
-        self.data_space.set_u8(*sp as usize, rd_val);
+        self.sram.set_u8(*sp as usize, rd_val);
     }
 
     pub fn swap(&mut self, rd: u8) {
@@ -219,7 +220,7 @@ impl Cpu
 
         // push return address onto stack
         let mut sp = self.register_file.gpr_pair_val(regs::SP_LO_NUM).unwrap();
-        self.data_space.set_u16((sp - 1) as usize, return_addr);
+        self.sram.set_u16((sp - 1) as usize, return_addr);
 
         // post-decrement
         sp -= 2;
@@ -235,7 +236,7 @@ impl Cpu
         // pre-increment
         sp += 2;
 
-        let return_addr = self.data_space.get_u16((sp - 1) as usize);
+        let return_addr = self.sram.get_u16((sp - 1) as usize);
         self.register_file.set_gpr_pair(regs::SP_LO_NUM, sp);
 
         self.pc = return_addr as u32;
@@ -253,8 +254,8 @@ impl Cpu
         // There should only be 6-bits.
         assert!(a <= 0b111111);
 
-        let offset = SPACE_IO_OFFSET + a as u16;
-        let io_val = self.data_space.get_u8(offset as usize);
+        let offset = SRAM_IO_OFFSET + a as u16;
+        let io_val = self.sram.get_u8(offset as usize);
 
         *self.register_file.gpr_mut(rd).unwrap() = io_val;
     }
@@ -263,10 +264,10 @@ impl Cpu
         // There should only be 6-bits.
         assert!(a <= 0b111111);
 
-        let offset = SPACE_IO_OFFSET + a as u16;
+        let offset = SRAM_IO_OFFSET + a as u16;
         let reg_val = self.register_file.gpr_val(rd).unwrap();
 
-        self.data_space.set_u8(offset as usize, reg_val);
+        self.sram.set_u8(offset as usize, reg_val);
     }
 
     fn fetch(&mut self) -> inst::Instruction {

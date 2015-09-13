@@ -5,7 +5,7 @@ use regs::RegisterFile;
 use std::collections::HashMap;
 
 /// A microcontroller.
-pub trait Mcu
+pub trait Chip
 {
     fn register_file() -> RegisterFile {
         let mut file = HashMap::new();

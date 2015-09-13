@@ -1,9 +1,9 @@
 
-use mcu;
+use chips;
 
-pub struct Mcu;
+pub struct Chip;
 
-impl mcu::Mcu for Mcu
+impl chips::Chip for Chip
 {
     fn flash_size() -> usize {
         32 * 1024 // 32 KB
