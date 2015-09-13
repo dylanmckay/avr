@@ -2,16 +2,16 @@
 pub mod atmega328p;
 
 use regs::RegisterFile;
-use std::collections::HashMap;
 
 /// A microcontroller.
 pub trait Chip
 {
     fn register_file() -> RegisterFile {
-        let mut file = HashMap::new();
+        let mut file = Vec::new();
 
-        for gpr in 0..31 {
-            file.insert(gpr, 0);
+        // Create GPRs (r0-r31).
+        for _ in 0..32 {
+            file.push(0);
         }
 
         let sram_end = Self::sram_size()-1;
@@ -19,8 +19,8 @@ pub trait Chip
         let sram_size_hi = (sram_end & 0xff00) >> 8;
 
         // Innitialize SP
-        file.insert(32, sram_size_lo as u8);
-        file.insert(33, sram_size_hi as u8);
+        file.push(sram_size_lo as u8);
+        file.push(sram_size_hi as u8);
 
         RegisterFile::new(file)
     }

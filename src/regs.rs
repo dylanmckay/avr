@@ -25,13 +25,13 @@ pub const SP_HI_NUM: u8 = 33;
 #[derive(Clone,Debug,PartialEq,Eq)]
 pub struct RegisterFile
 {
-    registers: HashMap<u8, Register>,
+    registers: Vec<Register>,
     sreg: Register,
 }
 
 impl RegisterFile
 {
-    pub fn new(registers: HashMap<u8,Register>) -> Self {
+    pub fn new(registers: Vec<Register>) -> Self {
         RegisterFile {
             registers: registers,
             sreg: 0,
@@ -42,14 +42,14 @@ impl RegisterFile
     pub fn gpr(&self, addr: u8)
         -> Option<&Register> {
 
-        self.registers.get(&addr)
+        self.registers.get(addr as usize)
     }
 
     /// Gets a mutable register, or `None` if it doesn't exist.
     pub fn gpr_mut(&mut self, addr: u8)
         -> Option<&mut Register> {
 
-        self.registers.get_mut(&addr)
+        self.registers.get_mut(addr as usize)
     }
 
     pub fn gpr_val(&self, addr: u8)
