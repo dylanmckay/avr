@@ -60,7 +60,7 @@ impl Cpu
     }
 
     pub fn adc(&mut self, lhs: u8, rhs: u8) {
-        let carry = self.register_file.sreg_flag(regs::CARRY_MASK);
+        let carry = self.register_file.sreg_flag(regs::CARRY_FLAG);
         let constant = if carry { 1 } else { 0 };
 
         let sum = self.do_rdrr(lhs, rhs, |a,b| a+b+constant);
@@ -74,7 +74,7 @@ impl Cpu
     }
 
     pub fn sbc(&mut self, lhs: u8, rhs: u8) {
-        let carry = self.register_file.sreg_flag(regs::CARRY_MASK);
+        let carry = self.register_file.sreg_flag(regs::CARRY_FLAG);
         let constant = if carry { 1 } else { 0 };
 
         let diff = self.do_rdrr(lhs, rhs, |a,b| a-b-constant);
@@ -244,7 +244,7 @@ impl Cpu
     pub fn reti(&mut self) {
         self.ret();
 
-        self.register_file.sreg_flag_set(regs::INTERRUPT_MASK);
+        self.register_file.sreg_flag_set(regs::INTERRUPT_FLAG);
     }
 
     pub fn nop(&mut self) { }
@@ -390,7 +390,7 @@ impl Cpu
         self.update_zero_flag(val);
 
         let is_carry = (rr_val as i16).abs() > (rd_val as i16).abs();
-        self.update_status_flag_bit(regs::CARRY_MASK, is_carry);
+        self.update_status_flag_bit(regs::CARRY_FLAG, is_carry);
 
         // TODO: Set half carry flag
     }
@@ -398,30 +398,30 @@ impl Cpu
     /// Sets the overflow flag if `val` overflows a `u8`.
     fn update_overflow_flag(&mut self, val: u16) {
         let overflowed = val>0xff;
-        self.update_status_flag_bit(regs::OVERFLOW_MASK, overflowed)
+        self.update_status_flag_bit(regs::OVERFLOW_FLAG, overflowed)
     }
 
     /// Sets the carry flag if necessary.
     fn update_carry_flag(&mut self, val: u16) {
         let is_carry = (val&0b100000000)>0;
-        self.update_status_flag_bit(regs::CARRY_MASK, is_carry)
+        self.update_status_flag_bit(regs::CARRY_FLAG, is_carry)
     }
 
     /// Sets the half carry flag if necessary.
     fn update_half_carry_flag(&mut self, val: u16) {
         let is_hcarry = (val & 0b1000)>0;
-        self.update_status_flag_bit(regs::HALF_CARRY_MASK, is_hcarry)
+        self.update_status_flag_bit(regs::HALF_CARRY_FLAG, is_hcarry)
     }
 
     /// Sets the negative flag based on `val`.
     fn update_negative_flag(&mut self, val: u16) {
         let is_negative = (val & 0b10000000)>0;
-        self.update_status_flag_bit(regs::NEGATIVE_MASK, is_negative)
+        self.update_status_flag_bit(regs::NEGATIVE_FLAG, is_negative)
     }
 
     fn update_zero_flag(&mut self, val: u16) {
         let is_zero = val==0;
-        self.update_status_flag_bit(regs::ZERO_MASK, is_zero)
+        self.update_status_flag_bit(regs::ZERO_FLAG, is_zero)
     }
 
     fn update_status_flag_bit(&mut self, mask: u8, val: bool) {

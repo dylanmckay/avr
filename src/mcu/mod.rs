@@ -18,8 +18,6 @@ pub trait Mcu
         let sram_size_lo = sram_end & 0x00ff;
         let sram_size_hi = (sram_end & 0xff00) >> 8;
 
-        println!("lo: {}, hi: {}", sram_size_lo, sram_size_hi);
-
         // Innitialize SP
         file.insert(32, sram_size_lo as u8);
         file.insert(33, sram_size_hi as u8);

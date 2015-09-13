@@ -7,23 +7,14 @@ use std::collections::HashMap;
 /// A register value.
 pub type Register = u8;
 
-pub const CARRY_BIT: u8 = 0;
-pub const ZERO_BIT: u8 = 1;
-pub const NEGATIVE_BIT: u8 = 2;
-pub const OVERFLOW_BIT: u8 = 3;
-pub const S_BIT: u8 = 4;
-pub const HALF_CARRY_BIT: u8 = 5;
-pub const TRANSFER_BIT: u8 = 6;
-pub const INTERRUPT_BIT: u8 = 7;
-
-pub const CARRY_MASK: u8 = (1<<CARRY_BIT);
-pub const ZERO_MASK: u8 = (1<<ZERO_BIT);
-pub const NEGATIVE_MASK: u8 = (1<<NEGATIVE_BIT);
-pub const OVERFLOW_MASK: u8 = (1<<OVERFLOW_BIT);
-pub const S_MASK: u8 = (1<<S_BIT);
-pub const HALF_CARRY_MASK: u8 = (1<<HALF_CARRY_BIT);
-pub const TRANSFER_MASK: u8 = (1<<TRANSFER_BIT);
-pub const INTERRUPT_MASK: u8 = (1<<INTERRUPT_BIT);
+pub const CARRY_FLAG: u8 = (1<<0);
+pub const ZERO_FLAG: u8 = (1<<1);
+pub const NEGATIVE_FLAG: u8 = (1<<2);
+pub const OVERFLOW_FLAG: u8 = (1<<3);
+pub const S_FLAG: u8 = (1<<4);
+pub const HALF_CARRY_FLAG: u8 = (1<<5);
+pub const TRANSFER_FLAG: u8 = (1<<6);
+pub const INTERRUPT_FLAG: u8 = (1<<7);
 
 /// `SP` low register number.
 pub const SP_LO_NUM: u8 = 32;
