@@ -84,6 +84,14 @@ impl RegisterFile
         Some(val)
     }
 
+    pub fn set_gpr_pair(&mut self, low: u8, val: u16) {
+        let val_lo = ((val & 0x00ff) >> 0) as u8;
+        let val_hi = ((val & 0xff00) >> 8) as u8;
+
+        *self.gpr_mut(low).unwrap() = val_lo;
+        *self.gpr_mut(low+1).unwrap() = val_hi;
+    }
+
     pub fn sreg(&self) -> &Register { &self.sreg }
     pub fn sreg_mut(&mut self) -> &mut Register { &mut self.sreg }
 

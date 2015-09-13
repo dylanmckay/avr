@@ -36,6 +36,9 @@ pub enum Instruction
     Cpc(Gpr, Gpr),
     Mov(Gpr, Gpr),
 
+    In(Gpr, u8),
+    Out(u8, Gpr),
+
     Jmp(u32),
     Call(u32),
 
@@ -86,13 +89,15 @@ impl Instruction
             Some(i)
         } else if let Some(i) = Self::try_read_rdrr(bits) {
             Some(i)
+        } else if let Some(i) = Self::try_read_rda(bits) {
+            Some(i)
         } else {
             None
         }
     }
 
     pub fn try_read32(bits: u32) -> Option<Self> {
-        if let Some(i) = Self::try_read_k(bits) {
+        if let Some(i) = Self::try_read_k32(bits) {
             Some(i)
         } else {
             None
@@ -165,9 +170,32 @@ impl Instruction
         }
     }
 
-    /// 32-bits branches.
+    /// Either an `in` or `out` IO instruction.
+    /// rda: `1011|fAAd|dddd|AAAA`.
+    /// Where `f` is the secondary opcode.
+    fn try_read_rda(bits: u16) -> Option<Self> {
+        let opcode = (bits & 0xf000) >> 12;
+        let subopcode = (bits & 0b100000000000) >> 11;
+
+        let reg = ((0b111110000 & bits) >> 4) as u8;
+        let a = (((0b11000000000 & bits) >> 5) |
+                 ((0b1111 & bits) >> 0)) as u8;
+
+        if opcode != 0b1011 {
+            return None;
+        }
+
+        match subopcode {
+            0b0 => Some(Instruction::In(reg, a)),
+            0b1 => Some(Instruction::Out(a, reg)),
+            _ => None,
+        }
+
+    }
+
+    /// 32-bit branches.
     ///  <|1001|010k|kkkk|fffk|kkkk|kkkk|kkkk|kkkk|>
-    fn try_read_k(bits: u32) -> Option<Self> {
+    fn try_read_k32(bits: u32) -> Option<Self> {
         let opcode = (bits & 0xfe000000) >> 25;
         let subopcode = (bits & 0xe0000) >> 17;
 

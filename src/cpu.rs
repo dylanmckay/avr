@@ -4,6 +4,11 @@ use mem;
 use mcu::Mcu;
 use inst;
 
+
+pub const SPACE_REGISTER_OFFSET: u16 = 0;
+pub const SPACE_IO_OFFSET: u16 = 0x20;
+pub const SPACE_DATA_OFFSET: u16 = 0x60;
+
 /// The AVR CPU.
 /// TODO: this should probably be renamed to Mcu (it owns the RAM, etc).
 pub struct Cpu
@@ -210,10 +215,43 @@ impl Cpu
     }
 
     pub fn call(&mut self, k: u32) {
-        unimplemented!();
+        let return_addr = (self.pc + 4) as u16; // after CALL instruction.
+
+        // push return address onto stack
+        let mut sp = self.register_file.gpr_pair_val(regs::SP_LO_NUM).unwrap();
+        println!("SP: {}", sp);
+
+        self.data_space.set_u16((sp - 1) as usize, return_addr);
+
+        // post-decrement
+        sp -= 2;
+
+        self.register_file.set_gpr_pair(regs::SP_LO_NUM, sp);
+
+        self.pc = k;
     }
 
     pub fn nop(&mut self) { }
+
+    pub fn _in(&mut self, rd: u8, a: u8) {
+        // There should only be 6-bits.
+        assert!(a <= 0b111111);
+
+        let offset = SPACE_IO_OFFSET + a as u16;
+        let io_val = self.data_space.get_u8(offset as usize);
+
+        *self.register_file.gpr_mut(rd).unwrap() = io_val;
+    }
+
+    pub fn out(&mut self, a: u8, rd: u8) {
+        // There should only be 6-bits.
+        assert!(a <= 0b111111);
+
+        let offset = SPACE_IO_OFFSET + a as u16;
+        let reg_val = self.register_file.gpr_val(rd).unwrap();
+
+        self.data_space.set_u8(offset as usize, reg_val);
+    }
 
     fn fetch(&mut self) -> inst::Instruction {
         let bytes = self.program_space.bytes()
@@ -257,6 +295,8 @@ impl Cpu
             Instruction::Cpc(rd, rr) => self.cpc(rd, rr),
             Instruction::Mov(rd, rr) => self.mov(rd, rr),
             Instruction::Nop => self.nop(),
+            Instruction::In(rd, a) => self._in(rd, a),
+            Instruction::Out(a, rd) => self.out(a, rd),
             Instruction::Jmp(k) => self.jmp(k),
             Instruction::Call(k) => self.call(k),
         }
