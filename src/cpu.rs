@@ -219,8 +219,6 @@ impl Cpu
 
         // push return address onto stack
         let mut sp = self.register_file.gpr_pair_val(regs::SP_LO_NUM).unwrap();
-        println!("SP: {}", sp);
-
         self.data_space.set_u16((sp - 1) as usize, return_addr);
 
         // post-decrement
@@ -229,6 +227,24 @@ impl Cpu
         self.register_file.set_gpr_pair(regs::SP_LO_NUM, sp);
 
         self.pc = k;
+    }
+
+    pub fn ret(&mut self) {
+        let mut sp = self.register_file.gpr_pair_val(regs::SP_LO_NUM).unwrap();
+
+        // pre-increment
+        sp += 2;
+
+        let return_addr = self.data_space.get_u16((sp - 1) as usize);
+        self.register_file.set_gpr_pair(regs::SP_LO_NUM, sp);
+
+        self.pc = return_addr as u32;
+    }
+
+    pub fn reti(&mut self) {
+        self.ret();
+
+        self.register_file.sreg_flag_set(regs::INTERRUPT_MASK);
     }
 
     pub fn nop(&mut self) { }
@@ -258,15 +274,13 @@ impl Cpu
                                       .skip(self.pc as usize)
                                       .map(|&a| a);
 
-        let inst = inst::Instruction::read(bytes).unwrap();
-
-        self.pc += inst.size() as u32;
-
-        inst
+        inst::Instruction::read(bytes).unwrap()
     }
 
     fn execute(&mut self, inst: inst::Instruction) {
         use inst::Instruction;
+
+        self.pc += inst.size() as u32;
 
         match inst {
             Instruction::Inc(rd) => self.inc(rd),
@@ -295,6 +309,8 @@ impl Cpu
             Instruction::Cpc(rd, rr) => self.cpc(rd, rr),
             Instruction::Mov(rd, rr) => self.mov(rd, rr),
             Instruction::Nop => self.nop(),
+            Instruction::Ret => self.ret(),
+            Instruction::Reti => self.reti(),
             Instruction::In(rd, a) => self._in(rd, a),
             Instruction::Out(a, rd) => self.out(a, rd),
             Instruction::Jmp(k) => self.jmp(k),

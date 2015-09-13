@@ -43,6 +43,8 @@ pub enum Instruction
     Call(u32),
 
     Nop,
+    Ret,
+    Reti,
 }
 
 impl Instruction
@@ -83,6 +85,10 @@ impl Instruction
     fn try_read16(bits: u16) -> Option<Self> {
         if bits == 0 {
             Some(Instruction::Nop)
+        } else if bits == 0x9508 {
+            Some(Instruction::Ret)
+        } else if bits == 0x9518 {
+            Some(Instruction::Reti)
         } else if let Some(i) = Self::try_read_rd(bits) {
             Some(i)
         } else if let Some(i) = Self::try_read_rdk(bits) {

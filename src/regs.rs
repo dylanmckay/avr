@@ -99,4 +99,12 @@ impl RegisterFile
     pub fn sreg_flag(&self, mask: u8) -> bool {
         (self.sreg & mask) == mask
     }
+
+    pub fn sreg_flag_set(&mut self, mask: u8) {
+        self.sreg |= mask;
+    }
+
+    pub fn sreg_flag_clear(&mut self, mask: u8) {
+        self.sreg &= !mask;
+    }
 }
