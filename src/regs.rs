@@ -1,8 +1,5 @@
 
-
 // TODO: s/addr/num
-
-use std::collections::HashMap;
 
 /// A register value.
 pub type Register = u8;

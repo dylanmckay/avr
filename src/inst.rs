@@ -4,6 +4,15 @@ pub type GprPair = u8;
 pub type Address = u32;
 pub type RelativeAddress = u32;
 
+#[derive(Copy,Clone,Debug,PartialEq,Eq)]
+pub enum Variant
+{
+    Normal,
+    Predecrement,
+    Postincrement,
+}
+
+
 /// An instruction.
 #[derive(Copy,Clone,Debug,PartialEq,Eq)]
 pub enum Instruction
@@ -43,6 +52,12 @@ pub enum Instruction
     Call(u32),
     Rjmp(i16),
     Rcall(i16),
+
+    St(GprPair, Gpr, Variant),
+    Ld(Gpr, GprPair, Variant),
+
+    Std(GprPair, u8, Gpr),
+    Ldd(Gpr, GprPair, u8),
 
     /// Load program memory.
     /// `GprPair` is always the `Z` register.
@@ -107,7 +122,13 @@ impl Instruction
             Some(i)
         } else if let Some(i) = Self::try_read_rda(bits) {
             Some(i)
+        } else if let Some(i) = Self::try_read_rdz(bits) {
+            Some(i)
         } else if let Some(i) = Self::try_read_k16(bits) {
+            Some(i)
+        } else if let Some(i) = Self::try_read_st_ld(bits) {
+            Some(i)
+        } else if let Some(i) = Self::try_read_std_ldd(bits) {
             Some(i)
         } else {
             None
@@ -216,7 +237,7 @@ impl Instruction
     /// `f` is postincrement bit.
     fn try_read_rdz(bits: u16) -> Option<Self> {
         let opcode = (bits & 0b1111111000000000) >> 9;
-        let sub_op = (bits & 0b1);
+        let sub_op = bits & 0b1;
 
         let rd = ((bits & 0x1f0) >> 4) as u8;
 
@@ -261,6 +282,72 @@ impl Instruction
             0b110 => Some(Instruction::Jmp(k)),
             0b111 => Some(Instruction::Call(k)),
             _ => None,
+        }
+    }
+
+    /// Attempts to read an `LD` or `ST` instruction.
+    fn try_read_st_ld(bits: u16) -> Option<Self> {
+        let opcode = (bits & 0b1111111000000000) >> 9;
+        let subop = bits & 0xf;
+
+        let reg = ((bits & 0x1f0) >> 4) as u8;
+
+        match (opcode, subop) {
+            (0b1001001, 0b1100) => Some(Instruction::St(26, reg, Variant::Normal)),
+            (0b1001001, 0b1101) => Some(Instruction::St(26, reg, Variant::Postincrement)),
+            (0b1001001, 0b1110) => Some(Instruction::St(26, reg, Variant::Predecrement)),
+            (0b1000001, 0b1000) => Some(Instruction::St(28, reg, Variant::Normal)),
+            (0b1001001, 0b1001) => Some(Instruction::St(28, reg, Variant::Postincrement)),
+            (0b1001001, 0b1010) => Some(Instruction::St(28, reg, Variant::Predecrement)),
+            (0b1000001, 0b0000) => Some(Instruction::St(30, reg, Variant::Normal)),
+            (0b1001001, 0b0001) => Some(Instruction::St(30, reg, Variant::Postincrement)),
+            (0b1001001, 0b0010) => Some(Instruction::St(30, reg, Variant::Predecrement)),
+
+            (0b1001000, 0b1100) => Some(Instruction::Ld(reg, 26, Variant::Normal)),
+            (0b1001000, 0b1101) => Some(Instruction::Ld(reg, 26, Variant::Postincrement)),
+            (0b1001000, 0b1110) => Some(Instruction::Ld(reg, 26, Variant::Predecrement)),
+            (0b1000000, 0b1000) => Some(Instruction::Ld(reg, 28, Variant::Normal)),
+            (0b1001000, 0b1001) => Some(Instruction::Ld(reg, 28, Variant::Postincrement)),
+            (0b1001000, 0b1010) => Some(Instruction::Ld(reg, 28, Variant::Predecrement)),
+            (0b1000000, 0b0000) => Some(Instruction::Ld(reg, 30, Variant::Normal)),
+            (0b1001000, 0b0001) => Some(Instruction::Ld(reg, 30, Variant::Postincrement)),
+            (0b1001000, 0b0010) => Some(Instruction::Ld(reg, 30, Variant::Predecrement)),
+
+            _ => None,
+        }
+    }
+
+    /// An `STD` or `LDD` instruction.
+    /// `(std|ldd) rd, y+z => 10q0 qqfr rrrr pqqq`
+    /// * `f` is type (`1` for `std`, `0` for `ldd`).
+    /// * `p` is PTRREG (`1` for `Y` and `0` for `Z`)
+    ///
+    fn try_read_std_ldd(bits: u16) -> Option<Self> {
+        let opcode = (bits & 0b1101_0000_0000_0000) >> 12;
+
+        let f = (bits & 0b0000_00010_0000_0000) >> 9;
+        let p = (bits & 0b1000) >> 3;
+        let q = ((bits & 0b0010_0000_0000_0000) >> 7) |
+                ((bits & 0b0000_1100_0000_0000) >> 6) |
+                ((bits & 0b0000_0000_0000_0111) >> 0);
+
+        let reg = ((bits & 0b1_1111_0000) >> 4) as u8;
+        let imm = q as u8;
+
+        if opcode != 0b1000 {
+            return None;
+        }
+
+        let ptrreg = match p {
+            0b0 => 30, // Z reg
+            0b1 => 28, // Y reg
+            _ => unreachable!(),
+        };
+
+        match f {
+            0b0 => Some(Instruction::Ldd(reg, ptrreg, imm)),
+            0b1 => Some(Instruction::Std(ptrreg, imm, reg)),
+            _ => unreachable!(),
         }
     }
 }

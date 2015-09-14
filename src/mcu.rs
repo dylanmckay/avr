@@ -11,6 +11,8 @@ pub const SRAM_IO_OFFSET: u16 = 0x20;
 /// The address that data space is mapped to in SRAM.
 pub const SRAM_DATA_OFFSET: u16 = 0x60;
 
+pub const PTR_SIZE: u16 = 2;
+
 /// The AVR CPU.
 pub struct Mcu
 {
@@ -283,6 +285,41 @@ impl Mcu
         self.sram.set_u8(offset as usize, reg_val);
     }
 
+    fn st(&mut self, ptr: u8, reg: u8, variant: inst::Variant) {
+        let addr = self.register_file.gpr_pair_val(ptr).unwrap();
+        let val = self.register_file.gpr_val(reg).unwrap();
+
+        self.sram.set_u8(addr as usize, val);
+
+        self.handle_ld_st_variant(ptr, variant);
+    }
+
+    fn ld(&mut self, reg: u8, ptr: u8, variant: inst::Variant) {
+        let addr = self.register_file.gpr_pair_val(ptr).unwrap();
+
+        // Load from data space
+        let val = self.sram.get_u8(addr as usize);
+        // Store to register.
+        *self.register_file.gpr_mut(reg).unwrap() = val;
+
+        self.handle_ld_st_variant(ptr, variant);
+    }
+
+    fn std(&mut self, ptr: u8, imm: u8, reg: u8) {
+        let addr = self.register_file.gpr_pair_val(ptr).unwrap() + imm as u16;
+        let val = self.register_file.gpr_val(reg).unwrap();
+
+        self.sram.set_u8(addr as usize, val);
+    }
+
+    fn ldd(&mut self, reg: u8, ptr: u8, imm: u8) {
+        let addr = self.register_file.gpr_pair_val(ptr).unwrap() + imm as u16;
+
+        let val = self.sram.get_u8(addr as usize);
+
+        *self.register_file.gpr_mut(reg).unwrap() = val;
+    }
+
     fn fetch(&mut self) -> inst::Instruction {
         let bytes = self.program_space.bytes()
                                       .skip(self.pc as usize)
@@ -332,6 +369,10 @@ impl Mcu
             Instruction::Rjmp(k) => self.rjmp(k),
             Instruction::Rcall(k) => self.rcall(k),
             Instruction::Lpm(rd, z, postinc) => self.lpm(rd, z, postinc),
+            Instruction::St(ptr, reg, variant) => self.st(ptr, reg, variant),
+            Instruction::Std(ptr, imm, reg) => self.std(ptr, imm, reg),
+            Instruction::Ld(reg, ptr, variant) => self.ld(reg, ptr, variant),
+            Instruction::Ldd(reg, ptr, imm) => self.ldd(reg, ptr, imm),
         }
     }
 
@@ -451,5 +492,17 @@ impl Mcu
         }
 
         // TODO: update S flag. should be `N xor V`.
+    }
+
+    fn handle_ld_st_variant(&mut self, ptr: u8, variant: inst::Variant) {
+        let mut val = self.register_file.gpr_pair_val(ptr).unwrap();
+
+        match variant {
+            inst::Variant::Normal => (),
+            inst::Variant::Predecrement => val -= PTR_SIZE,
+            inst::Variant::Postincrement => val += PTR_SIZE,
+        }
+
+        self.register_file.set_gpr_pair(ptr, val);
     }
 }
