@@ -359,6 +359,7 @@ impl Mcu
             Instruction::Cp(rd, rr) => self.cp(rd, rr),
             Instruction::Cpc(rd, rr) => self.cpc(rd, rr),
             Instruction::Mov(rd, rr) => self.mov(rd, rr),
+            Instruction::Movw(rd, rr) => self.movw(rd, rr),
             Instruction::Nop => self.nop(),
             Instruction::Ret => self.ret(),
             Instruction::Reti => self.reti(),

@@ -44,6 +44,7 @@ pub enum Instruction
     Cp(Gpr, Gpr),
     Cpc(Gpr, Gpr),
     Mov(Gpr, Gpr),
+    Movw(GprPair, GprPair),
 
     In(Gpr, u8),
     Out(u8, Gpr),
@@ -129,6 +130,8 @@ impl Instruction
         } else if let Some(i) = Self::try_read_st_ld(bits) {
             Some(i)
         } else if let Some(i) = Self::try_read_std_ldd(bits) {
+            Some(i)
+        } else if let Some(i) = Self::try_read_movw(bits) {
             Some(i)
         } else {
             None
@@ -349,6 +352,23 @@ impl Instruction
             0b1 => Some(Instruction::Std(ptrreg, imm, reg)),
             _ => unreachable!(),
         }
+    }
+
+    fn try_read_movw(bits: u16) -> Option<Self> {
+        let opcode = (bits & 0xff00) >> 8;
+
+        let mut rd = (bits & 0x00f0) >> 4;
+        let mut rr = (bits & 0x000f) >> 0;
+
+        // Because all registers are pairs, the last bit is always 0
+        // so it is always encoded by right shifting by one.
+        rd <<= 1; rr <<= 1;
+
+        if opcode != 0b00000001 {
+            return None;
+        }
+
+        Some(Instruction::Movw(rd as u8, rr as u8))
     }
 }
 
