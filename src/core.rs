@@ -14,7 +14,7 @@ pub const SRAM_DATA_OFFSET: u16 = 0x60;
 pub const PTR_SIZE: u16 = 2;
 
 /// The AVR CPU.
-pub struct Mcu
+pub struct Core
 {
     register_file: RegisterFile,
 
@@ -25,12 +25,12 @@ pub struct Mcu
     pc: u32,
 }
 
-impl Mcu
+impl Core
 {
     pub fn new<M>() -> Self
         where M: Chip
     {
-        Mcu {
+        Core {
             register_file: M::register_file(),
             program_space: mem::Space::new(M::flash_size()),
             sram: mem::Space::new(M::sram_size()),

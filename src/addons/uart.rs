@@ -1,4 +1,4 @@
-use Mcu;
+use Core;
 
 pub struct Uart
 {
@@ -7,7 +7,7 @@ pub struct Uart
 
 impl Uart
 {
-    fn tick(&mut self, mcu: &mut Mcu) {
+    fn tick(&mut self, core: &mut Core) {
         println!("tick");
     }
 }

@@ -4,5 +4,5 @@ pub mod uart;
 
 trait Addon
 {
-    fn tick(&mut self, mcu: &mut ::Mcu);
+    fn tick(&mut self, core: &mut ::Core);
 }
