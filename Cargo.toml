@@ -4,3 +4,11 @@ name = "avr_emu"
 version = "0.0.1"
 authors = ["Dylan McKay <dylanmckay34@gmail.com"]
 
+[lib]
+name = "avr_emu"
+path = "src/lib.rs"
+
+[[bin]]
+name = "emulator"
+path = "tools/emulator.rs"
+

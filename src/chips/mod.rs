@@ -1,7 +1,7 @@
-
 pub mod atmega328p;
 
 use regs::{RegisterFile,Register};
+use io;
 
 /// A microcontroller.
 pub trait Chip
@@ -17,24 +17,26 @@ pub trait Chip
             });
         }
 
-        let sram_end = Self::sram_size()-1;
-        let sram_size_lo = sram_end & 0x00ff;
-        let sram_size_hi = (sram_end & 0xff00) >> 8;
+        let memory_end = Self::memory_size()-1;
+        let memory_size_lo = memory_end & 0x00ff;
+        let memory_size_hi = (memory_end & 0xff00) >> 8;
 
         // Innitialize SP
         file.push(Register {
             name: "SPH".into(),
-            value: sram_size_hi as u8,
+            value: memory_size_hi as u8,
         });
 
         file.push(Register {
             name: "SPL".into(),
-            value: sram_size_lo as u8,
+            value: memory_size_lo as u8,
         });
 
         RegisterFile::new(file)
     }
 
+    fn io_ports() -> Vec<io::Port>;
+
     fn flash_size() -> usize;
-    fn sram_size() -> usize;
+    fn memory_size() -> usize;
 }

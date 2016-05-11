@@ -19,7 +19,7 @@ pub struct Core
     register_file: RegisterFile,
 
     program_space: mem::Space,
-    sram: mem::Space,
+    memory: mem::Space,
 
     /// The program counter.
     pc: u32,
@@ -33,7 +33,7 @@ impl Core
         Core {
             register_file: M::register_file(),
             program_space: mem::Space::new(M::flash_size()),
-            sram: mem::Space::new(M::sram_size()),
+            memory: mem::Space::new(M::memory_size()),
 
             pc: 0,
         }
@@ -53,8 +53,13 @@ impl Core
     }
 
     pub fn register_file(&self) -> &RegisterFile { &self.register_file }
+    pub fn register_file_mut(&mut self) -> &mut RegisterFile { &mut self.register_file }
+
     pub fn program_space(&self) -> &mem::Space { &self.program_space }
-    pub fn sram(&self) -> &mem::Space { &self.sram }
+    pub fn program_space_mut(&mut self) -> &mut mem::Space { &mut self.program_space }
+
+    pub fn memory(&self) -> &mem::Space { &self.memory }
+    pub fn memory_mut(&mut self) -> &mut mem::Space { &mut self.memory }
 
     /// lhs = lhs + rhs
     pub fn add(&mut self, lhs: u8, rhs: u8) {
@@ -165,7 +170,7 @@ impl Core
 
         assert!(*sp > 0, "stack overflow");
 
-        self.sram.set_u8(*sp as usize, rd_val);
+        self.memory.set_u8(*sp as usize, rd_val);
 
         *sp -= 1;
     }
@@ -178,7 +183,7 @@ impl Core
 
         assert!(*sp > 0, "stack overflow");
 
-        self.sram.set_u8(*sp as usize, rd_val);
+        self.memory.set_u8(*sp as usize, rd_val);
     }
 
     pub fn swap(&mut self, rd: u8) {
@@ -222,7 +227,7 @@ impl Core
 
         // push return address onto stack
         let mut sp = self.register_file.gpr_pair_val(regs::SP_LO_NUM).unwrap();
-        self.sram.set_u16((sp - 1) as usize, return_addr);
+        self.memory.set_u16((sp - 1) as usize, return_addr);
 
         // post-decrement
         sp -= 2;
@@ -247,7 +252,7 @@ impl Core
         // pre-increment
         sp += 2;
 
-        let return_addr = self.sram.get_u16((sp - 1) as usize);
+        let return_addr = self.memory.get_u16((sp - 1) as usize);
         self.register_file.set_gpr_pair(regs::SP_LO_NUM, sp);
 
         self.pc = return_addr as u32;
@@ -270,7 +275,7 @@ impl Core
         assert!(a <= 0b111111);
 
         let offset = SRAM_IO_OFFSET + a as u16;
-        let io_val = self.sram.get_u8(offset as usize);
+        let io_val = self.memory.get_u8(offset as usize);
 
         *self.register_file.gpr_mut(rd).unwrap() = io_val;
     }
@@ -282,14 +287,14 @@ impl Core
         let offset = SRAM_IO_OFFSET + a as u16;
         let reg_val = self.register_file.gpr_val(rd).unwrap();
 
-        self.sram.set_u8(offset as usize, reg_val);
+        self.memory.set_u8(offset as usize, reg_val);
     }
 
     fn st(&mut self, ptr: u8, reg: u8, variant: inst::Variant) {
         let addr = self.register_file.gpr_pair_val(ptr).unwrap();
         let val = self.register_file.gpr_val(reg).unwrap();
 
-        self.sram.set_u8(addr as usize, val);
+        self.memory.set_u8(addr as usize, val);
 
         self.handle_ld_st_variant(ptr, variant);
     }
@@ -298,7 +303,7 @@ impl Core
         let addr = self.register_file.gpr_pair_val(ptr).unwrap();
 
         // Load from data space
-        let val = self.sram.get_u8(addr as usize);
+        let val = self.memory.get_u8(addr as usize);
         // Store to register.
         *self.register_file.gpr_mut(reg).unwrap() = val;
 
@@ -309,13 +314,13 @@ impl Core
         let addr = self.register_file.gpr_pair_val(ptr).unwrap() + imm as u16;
         let val = self.register_file.gpr_val(reg).unwrap();
 
-        self.sram.set_u8(addr as usize, val);
+        self.memory.set_u8(addr as usize, val);
     }
 
     fn ldd(&mut self, reg: u8, ptr: u8, imm: u8) {
         let addr = self.register_file.gpr_pair_val(ptr).unwrap() + imm as u16;
 
-        let val = self.sram.get_u8(addr as usize);
+        let val = self.memory.get_u8(addr as usize);
 
         *self.register_file.gpr_mut(reg).unwrap() = val;
     }
