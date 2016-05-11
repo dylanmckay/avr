@@ -1,4 +1,3 @@
-
 pub use self::mcu::Mcu;
 pub use self::regs::{Register,RegisterFile};
 pub use self::mem::Space;
@@ -8,6 +7,7 @@ pub mod regs;
 pub mod mcu;
 pub mod mem;
 pub mod inst;
+pub mod addons;
 
 pub mod chips;
 

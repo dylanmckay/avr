@@ -1,8 +1,4 @@
-
 // TODO: s/addr/num
-
-/// A register value.
-pub type Register = u8;
 
 pub const CARRY_FLAG: u8 = (1<<0);
 pub const ZERO_FLAG: u8 = (1<<1);
@@ -18,6 +14,13 @@ pub const SP_LO_NUM: u8 = 32;
 /// `SP` high register number.
 pub const SP_HI_NUM: u8 = 33;
 
+#[derive(Clone,Debug,PartialEq,Eq)]
+pub struct Register
+{
+    pub name: String,
+    pub value: u8,
+}
+
 /// The register file.
 #[derive(Clone,Debug,PartialEq,Eq)]
 pub struct RegisterFile
@@ -31,31 +34,39 @@ impl RegisterFile
     pub fn new(registers: Vec<Register>) -> Self {
         RegisterFile {
             registers: registers,
-            sreg: 0,
+            sreg: Register {
+                name: "SREG".into(),
+                value: 0,
+            },
         }
+    }
+
+    pub fn registers(&self) -> ::std::slice::Iter<Register> {
+        self.registers.iter()
     }
 
     /// Gets a register, or `None` if it doesn't exist.
     pub fn gpr(&self, addr: u8)
-        -> Option<&Register> {
+        -> Option<u8> {
 
-        self.registers.get(addr as usize)
+        self.registers.get(addr as usize).map(|r| r.value)
     }
 
     /// Gets a mutable register, or `None` if it doesn't exist.
     pub fn gpr_mut(&mut self, addr: u8)
-        -> Option<&mut Register> {
+        -> Option<&mut u8> {
 
-        self.registers.get_mut(addr as usize)
+        self.registers.get_mut(addr as usize).map(|r| &mut r.value)
     }
 
+    // TODO: remove, unnecessary
     pub fn gpr_val(&self, addr: u8)
-        -> Option<Register> {
-        self.gpr(addr).map(|&a| a)
+        -> Option<u8> {
+        self.gpr(addr)
     }
 
     pub fn gpr_pair(&self, addr: u8)
-        -> Option<(&Register,&Register)> {
+        -> Option<(u8,u8)> {
         assert!(addr % 2 == 0,
                 "GPR pairs must be even");
 
@@ -68,7 +79,7 @@ impl RegisterFile
     pub fn gpr_pair_val(&self, addr: u8)
         -> Option<u16> {
         let (lo,hi) = self.gpr_pair(addr).unwrap();
-        let val = ((*hi as u16) << 8) | *lo as u16;
+        let val = ((hi as u16) << 8) | lo as u16;
         Some(val)
     }
 
@@ -80,19 +91,19 @@ impl RegisterFile
         *self.gpr_mut(low+1).unwrap() = val_hi;
     }
 
-    pub fn sreg(&self) -> &Register { &self.sreg }
-    pub fn sreg_mut(&mut self) -> &mut Register { &mut self.sreg }
+    pub fn sreg(&self) -> &u8 { &self.sreg.value }
+    pub fn sreg_mut(&mut self) -> &mut u8 { &mut self.sreg.value }
 
     /// Checks if a flag is set in SREG.
     pub fn sreg_flag(&self, mask: u8) -> bool {
-        (self.sreg & mask) == mask
+        (self.sreg.value & mask) == mask
     }
 
     pub fn sreg_flag_set(&mut self, mask: u8) {
-        self.sreg |= mask;
+        self.sreg.value |= mask;
     }
 
     pub fn sreg_flag_clear(&mut self, mask: u8) {
-        self.sreg &= !mask;
+        self.sreg.value &= !mask;
     }
 }

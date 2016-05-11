@@ -390,7 +390,7 @@ impl Mcu
     fn do_rdrr<F>(&mut self, rd: u8, rr: u8, mut f: F) -> u16
         where F: FnMut(u16,u16) -> u16 {
 
-        let rr_val = *self.register_file.gpr(rr).unwrap() as u16;
+        let rr_val = self.register_file.gpr(rr).unwrap() as u16;
         let rd_reg = self.register_file.gpr_mut(rd).unwrap();
         let rd_val = (*rd_reg) as u16;
 
@@ -415,12 +415,12 @@ impl Mcu
         assert!(rd % 2 == 0 && rr % 2 == 0,
                 "GPR pairs must be even numbers");
 
-        let rr_val_lo = *self.register_file.gpr(rr).unwrap() as u16;
-        let rr_val_hi = *self.register_file.gpr(rr+1).unwrap() as u16;
+        let rr_val_lo = self.register_file.gpr(rr).unwrap() as u16;
+        let rr_val_hi = self.register_file.gpr(rr+1).unwrap() as u16;
         let rr_val = (rr_val_hi << 8) | rr_val_lo;
 
-        let rd_val_lo = *self.register_file.gpr(rd).unwrap() as u16;
-        let rd_val_hi = *self.register_file.gpr(rd+1).unwrap() as u16;
+        let rd_val_lo = self.register_file.gpr(rd).unwrap() as u16;
+        let rd_val_hi = self.register_file.gpr(rd+1).unwrap() as u16;
         let rd_val = (rd_val_hi << 8) | rd_val_lo;
 
         let val = f(rd_val, rr_val);
