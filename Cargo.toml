@@ -4,6 +4,9 @@ name = "avr_emu"
 version = "0.0.1"
 authors = ["Dylan McKay <dylanmckay34@gmail.com"]
 
+[dependencies]
+ruby-mri = "0.0.1"
+
 [lib]
 name = "avr_emu"
 path = "src/lib.rs"

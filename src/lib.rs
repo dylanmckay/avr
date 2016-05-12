@@ -4,6 +4,7 @@ pub use self::regs::{Register,RegisterFile};
 pub use self::mem::Space;
 pub use self::inst::Instruction;
 pub use self::addons::Addon;
+pub use self::plugin::Plugin;
 
 pub mod core;
 pub mod mcu;
@@ -11,6 +12,7 @@ pub mod regs;
 pub mod mem;
 pub mod inst;
 pub mod io;
+pub mod plugin;
 
 pub mod addons;
 pub mod chips;

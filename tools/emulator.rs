@@ -1,6 +1,10 @@
 extern crate avr_emu;
 
 fn main() {
+    let mut plugin = avr_emu::Plugin::new();
+    plugin.do_thing();
+
+
     use std::io::Read;
 
     let mut core = avr_emu::Core::new::<avr_emu::chips::atmega328p::Chip>();
