@@ -3,7 +3,7 @@ use addons;
 
 pub struct Mcu
 {
-    core: Core,
+    pub core: Core,
     addons: Vec<Box<addons::Addon>>,
 }
 
@@ -27,6 +27,4 @@ impl Mcu
             addon.tick(&mut self.core);
         }
     }
-
-    pub fn core(&self) -> &Core { &self.core }
 }
