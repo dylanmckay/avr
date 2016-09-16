@@ -304,6 +304,14 @@ impl Core
         self.memory.set_u8(offset as usize, reg_val)
     }
 
+    pub fn sbi(&mut self, a: u8, b: u8) -> Result<(), Error> {
+        unimplemented!();
+    }
+
+    pub fn cbi(&mut self, a: u8, b: u8) -> Result<(), Error> {
+        unimplemented!();
+    }
+
     fn st(&mut self, ptr: u8, reg: u8, variant: inst::Variant) -> Result<(), Error> {
         let addr = self.register_file.gpr_pair_val(ptr).unwrap();
         let val = self.register_file.gpr_val(reg).unwrap();
@@ -387,6 +395,8 @@ impl Core
             Instruction::Reti => self.reti(),
             Instruction::In(rd, a) => self._in(rd, a),
             Instruction::Out(a, rd) => self.out(a, rd),
+            Instruction::Sbi(a, b) => self.sbi(a, b),
+            Instruction::Cbi(a, b) => self.cbi(a, b),
             Instruction::Jmp(k) => self.jmp(k),
             Instruction::Call(k) => self.call(k),
             Instruction::Rjmp(k) => self.rjmp(k),

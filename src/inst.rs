@@ -1,3 +1,4 @@
+use Error;
 
 pub type Gpr = u8;
 pub type GprPair = u8;
@@ -48,6 +49,10 @@ pub enum Instruction
 
     In(Gpr, u8),
     Out(u8, Gpr),
+    /// Set bit in IO register.
+    Sbi(u8, u8),
+    /// Clear bit in IO register.
+    Cbi(u8, u8),
 
     Jmp(u32),
     Call(u32),
@@ -72,7 +77,7 @@ pub enum Instruction
 
 impl Instruction
 {
-    pub fn read<I>(mut bytes: I) -> Result<Self,&'static str>
+    pub fn read<I>(mut bytes: I) -> Result<Self, Error>
         where I: Iterator<Item=u8> {
 
         let b1 = bytes.next().unwrap();
@@ -94,7 +99,7 @@ impl Instruction
             return Ok(i);
         }
 
-        Err("unknown instruction")
+        Err(Error::UnknownInstruction)
     }
 
     pub fn size(self) -> u8 {
@@ -122,6 +127,8 @@ impl Instruction
         } else if let Some(i) = Self::try_read_rdrr(bits) {
             Some(i)
         } else if let Some(i) = Self::try_read_rda(bits) {
+            Some(i)
+        } else if let Some(i) = Self::try_read_io_ab(bits) {
             Some(i)
         } else if let Some(i) = Self::try_read_rdz(bits) {
             Some(i)
@@ -233,6 +240,20 @@ impl Instruction
             _ => None,
         }
 
+    }
+
+    /// CBI: 1001 1000 AAAA Abbb
+    /// SBI: 1001 1010 AAAA Abbb
+    fn try_read_io_ab(bits: u16) -> Option<Self> {
+        let opcode = (bits & 0xff00) >> 8;
+        let a = ((bits & 0b0000000011111000) >> 3) as u8;
+        let b = (bits & 0b111) as u8;
+
+        match opcode {
+            0b10011010 => Some(Instruction::Sbi(a, b)),
+            0b10011000 => Some(Instruction::Cbi(a, b)),
+            _ => None,
+        }
     }
 
     /// `LPM` instructions.
