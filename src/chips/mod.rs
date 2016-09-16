@@ -18,8 +18,8 @@ pub trait Chip
         }
 
         let memory_end = Self::memory_size()-1;
-        let memory_size_lo = memory_end & 0x00ff;
-        let memory_size_hi = (memory_end & 0xff00) >> 8;
+        let memory_size_hi = memory_end & 0x00ff;
+        let memory_size_lo = (memory_end & 0xff00) >> 8;
 
         // Innitialize SP
         file.push(Register {

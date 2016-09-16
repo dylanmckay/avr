@@ -24,7 +24,7 @@ fn main() {
 
     mcu.attach(Box::new(uart));
 
-    for _ in 0..7 {
+    for _ in 0..70 {
         mcu.tick();
     }
 }
