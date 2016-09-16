@@ -355,7 +355,7 @@ impl Core
                                       .skip(self.pc as usize)
                                       .map(|&a| a);
 
-        Ok(inst::Instruction::read(bytes).unwrap())
+        Ok(inst::binary::read(bytes).unwrap())
     }
 
     fn execute(&mut self, inst: inst::Instruction) -> Result<(), Error> {
