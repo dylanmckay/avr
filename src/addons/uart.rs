@@ -5,9 +5,9 @@ use io;
 pub struct Uart
 {
     /// The baud rate (bits/second)
-    baud: u64,
+    pub baud: u64,
     /// The number of CPU ticks in a single second (ticks/second)
-    cpu_frequency: u64,
+    pub cpu_frequency: u64,
     /// Number of ticks between each bit.
     ticks_between_bits: u64,
 

@@ -25,6 +25,6 @@ fn main() {
     mcu.attach(Box::new(uart));
 
     for _ in 0..70 {
-        mcu.tick();
+        mcu.tick().expect("failed while ticking");
     }
 }

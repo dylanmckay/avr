@@ -1,4 +1,4 @@
-use Core;
+use {Core, Error};
 use addons;
 
 pub struct Mcu
@@ -20,11 +20,13 @@ impl Mcu
         self.addons.push(addon);
     }
 
-    pub fn tick(&mut self) {
-        self.core.tick();
+    pub fn tick(&mut self) -> Result<(), Error> {
+        self.core.tick()?;
 
         for addon in self.addons.iter_mut() {
             addon.tick(&mut self.core);
         }
+
+        Ok(())
     }
 }
