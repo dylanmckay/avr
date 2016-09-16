@@ -305,11 +305,11 @@ impl Core
     }
 
     pub fn sbi(&mut self, a: u8, b: u8) -> Result<(), Error> {
-        unimplemented!();
+        self.do_io_ab(a, b, |current, b| current | (1<<b))
     }
 
     pub fn cbi(&mut self, a: u8, b: u8) -> Result<(), Error> {
-        unimplemented!();
+        self.do_io_ab(a, b, |current, b| current & !(1<<b))
     }
 
     fn st(&mut self, ptr: u8, reg: u8, variant: inst::Variant) -> Result<(), Error> {
@@ -463,6 +463,15 @@ impl Core
         *self.register_file.gpr_mut(rd).unwrap() = val_lo as u8;
         *self.register_file.gpr_mut(rd+1).unwrap() = val_hi as u8;
         Ok(())
+    }
+
+    fn do_io_ab<F>(&mut self, a: u8, b: u8, mut f: F) -> Result<(), Error>
+        where F: FnMut(u8, u8) -> u8 {
+        let memory_address = (SRAM_IO_OFFSET + a as u16) as usize;
+        let current_value = self.memory.get_u8(memory_address)?;
+        let new_value = f(current_value, b);
+
+        self.memory.set_u8(memory_address, new_value)
     }
 
     /// Updates the `V`, `C`, `H`, `N`, `Z`, and `S` status flags.
