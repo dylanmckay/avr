@@ -4,6 +4,13 @@ name = "avr"
 version = "0.0.1"
 authors = ["Dylan McKay <dylanmckay34@gmail.com"]
 
+description = "AVR emulator"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/dylanmckay/avr"
+documentation = "https://docs.rs/avr"
+keywords = ["avr", "emulator", "microcontroller", "io", "cpu"]
+
 [dependencies]
 
 [[bin]]
