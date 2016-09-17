@@ -1,6 +1,7 @@
 # AVR emulator
 
-[![Build Status](https://travis-ci.org/dylanmckay/avr-emu.svg?branch=master)](https://travis-ci.org/dylanmckay/avr-emu)
+[![Build Status](https://travis-ci.org/dylanmckay/avr.svg?branch=master)](https://travis-ci.org/dylanmckay/avr)
+[![Crates.io](https://img.shields.io/crates/v/avr.svg)](https://crates.io/crates/avr)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 This program emulates an 8-bit AVR microcontroller. It supports the trivial
