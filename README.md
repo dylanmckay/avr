@@ -1,5 +1,7 @@
-
 # AVR emulator
+
+[![Build Status](https://travis-ci.org/dylanmckay/avr-emu.svg?branch=master)](https://travis-ci.org/dylanmckay/avr-emu)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 This program emulates an 8-bit AVR microcontroller. It supports the trivial
 C "Hello World!" program.
