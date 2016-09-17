@@ -1,9 +1,9 @@
-extern crate avr_emu;
+extern crate avr;
 
 fn main() {
     use std::io::Read;
 
-    let mut core = avr_emu::Core::new::<avr_emu::chips::atmega328p::Chip>();
+    let mut core = avr::Core::new::<avr::chips::atmega328p::Chip>();
 
     let mut args = std::env::args();
     args.next(); // eat the program name.
@@ -13,13 +13,13 @@ fn main() {
     let program_bytes = program_file.bytes().map(|a| a.unwrap());
     core.load_program_space(program_bytes);
 
-    let mut mcu = avr_emu::Mcu::new(core);
+    let mut mcu = avr::Mcu::new(core);
 
-    let uart = avr_emu::addons::Uart::new(
+    let uart = avr::addons::Uart::new(
         16000000, // CPU frequency
         187000,   // Baud rate
-        avr_emu::io::Port::new(0x24), // Tx
-        avr_emu::io::Port::new(0x25), // Rx
+        avr::io::Port::new(0x24), // Tx
+        avr::io::Port::new(0x25), // Rx
     );
 
     mcu.attach(Box::new(uart));

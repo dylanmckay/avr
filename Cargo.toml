@@ -1,14 +1,10 @@
 [package]
 
-name = "avr_emu"
+name = "avr"
 version = "0.0.1"
 authors = ["Dylan McKay <dylanmckay34@gmail.com"]
 
 [dependencies]
-
-[lib]
-name = "avr_emu"
-path = "src/lib.rs"
 
 [[bin]]
 name = "emulator"
