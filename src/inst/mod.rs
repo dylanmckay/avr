@@ -4,6 +4,7 @@ pub type Gpr = u8;
 pub type GprPair = u8;
 pub type Address = u32;
 pub type RelativeAddress = u32;
+pub type RelativeAddress7 = i8;
 
 #[derive(Copy,Clone,Debug,PartialEq,Eq)]
 pub enum Variant
@@ -58,6 +59,27 @@ pub enum Instruction
     Call(u32),
     Rjmp(i16),
     Rcall(i16),
+
+    Brbs(u8, RelativeAddress7),
+    Brbc(u8, RelativeAddress7),
+    Breq(RelativeAddress7),
+    Brne(RelativeAddress7),
+    Brcs(RelativeAddress7),
+    Brcc(RelativeAddress7),
+    Brsh(RelativeAddress7),
+    Brlo(RelativeAddress7),
+    Brmi(RelativeAddress7),
+    Brpl(RelativeAddress7),
+    Brge(RelativeAddress7),
+    Brlt(RelativeAddress7),
+    Brhs(RelativeAddress7),
+    Brhc(RelativeAddress7),
+    Brts(RelativeAddress7),
+    Brtc(RelativeAddress7),
+    Brvs(RelativeAddress7),
+    Brvc(RelativeAddress7),
+    Brie(RelativeAddress7),
+    Brid(RelativeAddress7),
 
     St(GprPair, Gpr, Variant),
     Ld(Gpr, GprPair, Variant),

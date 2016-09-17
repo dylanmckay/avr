@@ -1,13 +1,6 @@
-// TODO: s/addr/num
+use SReg;
 
-pub const CARRY_FLAG: u8 = (1<<0);
-pub const ZERO_FLAG: u8 = (1<<1);
-pub const NEGATIVE_FLAG: u8 = (1<<2);
-pub const OVERFLOW_FLAG: u8 = (1<<3);
-pub const S_FLAG: u8 = (1<<4);
-pub const HALF_CARRY_FLAG: u8 = (1<<5);
-pub const TRANSFER_FLAG: u8 = (1<<6);
-pub const INTERRUPT_FLAG: u8 = (1<<7);
+// TODO: s/addr/num
 
 /// `SP` low register number.
 pub const SP_LO_NUM: u8 = 32;
@@ -26,7 +19,7 @@ pub struct Register
 pub struct RegisterFile
 {
     registers: Vec<Register>,
-    sreg: Register,
+    pub sreg: SReg,
 }
 
 impl RegisterFile
@@ -34,10 +27,7 @@ impl RegisterFile
     pub fn new(registers: Vec<Register>) -> Self {
         RegisterFile {
             registers: registers,
-            sreg: Register {
-                name: "SREG".into(),
-                value: 0,
-            },
+            sreg: SReg::new(),
         }
     }
 
@@ -91,19 +81,17 @@ impl RegisterFile
         *self.gpr_mut(low+1).unwrap() = val_hi;
     }
 
-    pub fn sreg(&self) -> &u8 { &self.sreg.value }
-    pub fn sreg_mut(&mut self) -> &mut u8 { &mut self.sreg.value }
-
     /// Checks if a flag is set in SREG.
     pub fn sreg_flag(&self, mask: u8) -> bool {
-        (self.sreg.value & mask) == mask
+        (self.sreg.0.value & mask) == mask
     }
 
     pub fn sreg_flag_set(&mut self, mask: u8) {
-        self.sreg.value |= mask;
+        self.sreg.0.value |= mask;
     }
 
     pub fn sreg_flag_clear(&mut self, mask: u8) {
-        self.sreg.value &= !mask;
+        self.sreg.0.value &= !mask;
     }
 }
+

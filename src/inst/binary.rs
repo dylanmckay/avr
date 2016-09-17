@@ -1,5 +1,5 @@
 use {Instruction, Error};
-use inst;
+use {inst, math};
 
 pub fn read<I>(mut bytes: I) -> Result<Instruction, Error>
     where I: Iterator<Item=u8> {
@@ -55,6 +55,8 @@ fn try_read16(bits: u16) -> Option<Instruction> {
     } else if let Some(i) = self::try_read_std_ldd(bits) {
         Some(i)
     } else if let Some(i) = self::try_read_movw(bits) {
+        Some(i)
+    } else if let Some(i) = self::try_read_relcondbr(bits) {
         Some(i)
     } else {
         None
@@ -307,3 +309,33 @@ fn try_read_movw(bits: u16) -> Option<Instruction> {
 
     Some(Instruction::Movw(rd as u8, rr as u8))
 }
+
+/// BRNE: 1111 01kk kkkk k001
+/// BREQ: 1111 00kk kkkk k001
+/// BRBS: 1111 00kk kkkk ksss
+fn try_read_relcondbr(bits: u16) -> Option<Instruction> {
+    let opcode = bits & 0b1111_1100_0000_0111;
+    let k_bits = ((0b0000_0011_1111_1000 & bits) >> 3) as i8;
+    let k = math::sign_extend(k_bits << 1, 7);
+
+    match opcode {
+        0b1111_0100_0000_0001 => Some(Instruction::Brne(k)),
+        0b1111_0000_0000_0001 => Some(Instruction::Breq(k)),
+        0b1111_0000_0000_0000 => Some(Instruction::Brcs(k)),
+        0b1111_0100_0000_0000 => Some(Instruction::Brcc(k)),
+        0b1111_0100_0000_0100 => Some(Instruction::Brge(k)),
+        0b1111_0000_0000_0101 => Some(Instruction::Brhs(k)),
+        0b1111_0100_0000_0101 => Some(Instruction::Brhc(k)),
+        0b1111_0000_0000_0111 => Some(Instruction::Brie(k)),
+        0b1111_0100_0000_0111 => Some(Instruction::Brid(k)),
+        0b1111_0000_0000_0100 => Some(Instruction::Brlt(k)),
+        0b1111_0000_0000_0010 => Some(Instruction::Brmi(k)),
+        0b1111_0100_0000_0010 => Some(Instruction::Brpl(k)),
+        0b1111_0000_0000_0110 => Some(Instruction::Brts(k)),
+        0b1111_0100_0000_0110 => Some(Instruction::Brtc(k)),
+        0b1111_0000_0000_0011 => Some(Instruction::Brvs(k)),
+        0b1111_0100_0000_0011 => Some(Instruction::Brvc(k)),
+        _ => None,
+    }
+}
+

@@ -1,5 +1,6 @@
 use Error;
-use regs::{self,RegisterFile};
+use regs::{self, RegisterFile};
+use sreg;
 use mem;
 use chips::Chip;
 use inst;
@@ -68,7 +69,7 @@ impl Core
     }
 
     pub fn adc(&mut self, lhs: u8, rhs: u8) -> Result<(), Error> {
-        let carry = self.register_file.sreg_flag(regs::CARRY_FLAG);
+        let carry = self.register_file.sreg_flag(sreg::CARRY_FLAG);
         let constant = if carry { 1 } else { 0 };
 
         let sum = self.do_rdrr(lhs, rhs, |a,b| a+b+constant)?;
@@ -82,7 +83,7 @@ impl Core
     }
 
     pub fn sbc(&mut self, lhs: u8, rhs: u8) -> Result<(), Error> {
-        let carry = self.register_file.sreg_flag(regs::CARRY_FLAG);
+        let carry = self.register_file.sreg_flag(sreg::CARRY_FLAG);
         let constant = if carry { 1 } else { 0 };
 
         let diff = self.do_rdrr(lhs, rhs, |a,b| a-b-constant)?;
@@ -257,6 +258,86 @@ impl Core
         Ok(())
     }
 
+    pub fn brne(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_clear(sreg::ZERO_FLAG))
+    }
+
+    pub fn breq(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_set(sreg::ZERO_FLAG))
+    }
+
+    pub fn brbs(&mut self, flag: u8, k: i8) -> Result<(), Error> {
+        unimplemented!();
+    }
+
+    pub fn brbc(&mut self, flag: u8, k: i8) -> Result<(), Error> {
+        unimplemented!();
+    }
+
+    pub fn brcs(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_set(sreg::CARRY_FLAG))
+    }
+
+    pub fn brcc(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_clear(sreg::CARRY_FLAG))
+    }
+
+    pub fn brsh(&mut self, k: i8) -> Result<(), Error> {
+        self.brcc(k)
+    }
+
+    pub fn brlo(&mut self, k: i8) -> Result<(), Error> {
+        self.brcs(k)
+    }
+
+    pub fn brmi(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_set(sreg::NEGATIVE_FLAG))
+    }
+
+    pub fn brpl(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_clear(sreg::NEGATIVE_FLAG))
+    }
+
+    pub fn brge(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_clear(sreg::S_FLAG))
+    }
+
+    pub fn brlt(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_set(sreg::S_FLAG))
+    }
+
+    pub fn brhs(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_set(sreg::HALF_CARRY_FLAG))
+    }
+
+    pub fn brhc(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_clear(sreg::HALF_CARRY_FLAG))
+    }
+
+    pub fn brts(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_set(sreg::TRANSFER_FLAG))
+    }
+
+    pub fn brtc(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_clear(sreg::TRANSFER_FLAG))
+    }
+
+    pub fn brvs(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_set(sreg::OVERFLOW_FLAG))
+    }
+
+    pub fn brvc(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_clear(sreg::OVERFLOW_FLAG))
+    }
+
+    pub fn brie(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_set(sreg::INTERRUPT_FLAG))
+    }
+
+    pub fn brid(&mut self, k: i8) -> Result<(), Error> {
+        self.do_sreg_branch(k, |sreg| sreg.is_clear(sreg::INTERRUPT_FLAG))
+    }
+
     pub fn ret(&mut self) -> Result<(), Error>{
         let mut sp = self.register_file.gpr_pair_val(regs::SP_LO_NUM).unwrap();
 
@@ -273,7 +354,7 @@ impl Core
     pub fn reti(&mut self) -> Result<(), Error> {
         self.ret()?;
 
-        self.register_file.sreg_flag_set(regs::INTERRUPT_FLAG);
+        self.register_file.sreg_flag_set(sreg::INTERRUPT_FLAG);
         Ok(())
     }
 
@@ -325,7 +406,7 @@ impl Core
     fn ld(&mut self, reg: u8, ptr: u8, variant: inst::Variant) -> Result<(), Error> {
         let addr = self.register_file.gpr_pair_val(ptr).unwrap();
 
-        // Load from data space
+        // Load from data spacself.brid(k),
         let val = self.memory.get_u8(addr as usize)?;
         // Store to register.
         *self.register_file.gpr_mut(reg).unwrap() = val;
@@ -401,6 +482,26 @@ impl Core
             Instruction::Call(k) => self.call(k),
             Instruction::Rjmp(k) => self.rjmp(k),
             Instruction::Rcall(k) => self.rcall(k),
+            Instruction::Brbs(s, k) => self.brbs(s, k),
+            Instruction::Brbc(s, k) => self.brbc(s, k),
+            Instruction::Breq(k) => self.breq(k),
+            Instruction::Brne(k) => self.brne(k),
+            Instruction::Brcs(k) => self.brcs(k),
+            Instruction::Brcc(k) => self.brcc(k),
+            Instruction::Brsh(k) => self.brsh(k),
+            Instruction::Brlo(k) => self.brlo(k),
+            Instruction::Brmi(k) => self.brmi(k),
+            Instruction::Brpl(k) => self.brpl(k),
+            Instruction::Brge(k) => self.brge(k),
+            Instruction::Brlt(k) => self.brlt(k),
+            Instruction::Brhs(k) => self.brhs(k),
+            Instruction::Brhc(k) => self.brhc(k),
+            Instruction::Brts(k) => self.brts(k),
+            Instruction::Brtc(k) => self.brtc(k),
+            Instruction::Brvs(k) => self.brvs(k),
+            Instruction::Brvc(k) => self.brvc(k),
+            Instruction::Brie(k) => self.brie(k),
+            Instruction::Brid(k) => self.brid(k),
             Instruction::Lpm(rd, z, postinc) => self.lpm(rd, z, postinc),
             Instruction::St(ptr, reg, variant) => self.st(ptr, reg, variant),
             Instruction::Std(ptr, imm, reg) => self.std(ptr, imm, reg),
@@ -474,6 +575,13 @@ impl Core
         self.memory.set_u8(memory_address, new_value)
     }
 
+    fn do_sreg_branch<F>(&mut self, k: i8, mut f: F) -> Result<(), Error>
+        where F: FnMut(sreg::SReg) -> bool {
+        let sreg = self.register_file.sreg.clone();
+        if f(sreg) { self.rjmp(k as i16)? };
+        Ok(())
+    }
+
     /// Updates the `V`, `C`, `H`, `N`, `Z`, and `S` status flags.
     fn update_sreg_arithmetic(&mut self, val: u16) -> Result<(), Error> {
         self.update_overflow_flag(val);
@@ -493,50 +601,38 @@ impl Core
         self.update_zero_flag(val);
 
         let is_carry = (rr_val as i16).abs() > (rd_val as i16).abs();
-        self.update_status_flag_bit(regs::CARRY_FLAG, is_carry);
+        self.register_file.sreg.set(sreg::CARRY_FLAG, is_carry);
 
         // TODO: Set half carry flag
     }
 
     /// Sets the overflow flag if `val` overflows a `u8`.
     fn update_overflow_flag(&mut self, val: u16) {
-        let overflowed = val>0xff;
-        self.update_status_flag_bit(regs::OVERFLOW_FLAG, overflowed)
+        let overflowed = val > 0xff;
+        self.register_file.sreg.set(sreg::OVERFLOW_FLAG, overflowed);
     }
 
     /// Sets the carry flag if necessary.
     fn update_carry_flag(&mut self, val: u16) {
         let is_carry = (val&0b100000000)>0;
-        self.update_status_flag_bit(regs::CARRY_FLAG, is_carry)
+        self.register_file.sreg.set(sreg::CARRY_FLAG, is_carry);
     }
 
     /// Sets the half carry flag if necessary.
     fn update_half_carry_flag(&mut self, val: u16) {
         let is_hcarry = (val & 0b1000)>0;
-        self.update_status_flag_bit(regs::HALF_CARRY_FLAG, is_hcarry)
+        self.register_file.sreg.set(sreg::HALF_CARRY_FLAG, is_hcarry);
     }
 
     /// Sets the negative flag based on `val`.
     fn update_negative_flag(&mut self, val: u16) {
         let is_negative = (val & 0b10000000)>0;
-        self.update_status_flag_bit(regs::NEGATIVE_FLAG, is_negative)
+        self.register_file.sreg.set(sreg::NEGATIVE_FLAG, is_negative);
     }
 
     fn update_zero_flag(&mut self, val: u16) {
         let is_zero = val==0;
-        self.update_status_flag_bit(regs::ZERO_FLAG, is_zero)
-    }
-
-    fn update_status_flag_bit(&mut self, mask: u8, val: bool) {
-        let sreg = self.register_file.sreg_mut();
-
-        if val == true {
-            *sreg |= mask;
-        } else {
-            *sreg &= !mask;
-        }
-
-        // TODO: update S flag. should be `N xor V`.
+        self.register_file.sreg.set(sreg::ZERO_FLAG, is_zero);
     }
 
     fn handle_ld_st_variant(&mut self, ptr: u8, variant: inst::Variant) {
