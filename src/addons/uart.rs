@@ -13,10 +13,10 @@ pub struct Uart
 
     ticks_until_next_bit: u64,
 
-    tx: io::Port,
-    rx: io::Port,
+    _tx: io::Port,
+    _rx: io::Port,
 
-    processed_bits: Vec<u8>,
+    _processed_bits: Vec<u8>,
 }
 
 impl Uart
@@ -27,17 +27,17 @@ impl Uart
         Uart {
             cpu_frequency: cpu_frequency,
             baud: baud,
-            tx: tx,
-            rx: rx,
+            _tx: tx,
+            _rx: rx,
 
             ticks_between_bits: ticks_between_bits, // TODO: set this variable
             ticks_until_next_bit: ticks_between_bits,
 
-            processed_bits: Vec::new(),
+            _processed_bits: Vec::new(),
         }
     }
 
-    fn process_bit(&mut self, core: &mut Core) {
+    fn process_bit(&mut self, _core: &mut Core) {
         println!("tick");
     }
 }

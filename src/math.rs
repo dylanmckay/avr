@@ -1,4 +1,4 @@
-use std::{ops, convert, mem};
+use std::{ops, convert};
 
 pub fn sign_extend<T>(value: T, bit_size: T) -> T
     where T: Clone + ops::Sub<Output=T> + ops::Shl<T, Output=T> + ops::BitAnd<Output=T> + convert::From<i8> {

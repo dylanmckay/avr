@@ -1,19 +1,10 @@
 use Instruction;
-use nom::{IResult, Needed, digit, line_ending, space, alpha};
+use nom::{digit, space};
 use std::str;
 use std::str::FromStr;
-use std::borrow::Borrow;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct GPR8(pub u8);
-
-fn take4(i:&[u8]) -> IResult<&[u8], &[u8]>{
-    if i.len() < 4 {
-        IResult::Incomplete(Needed::Size(4))
-    } else {
-        IResult::Done(&i[4..],&i[0..4])
-    }
-}
 
 named!(gpr8<&[u8], GPR8>,
     chain!(
@@ -44,19 +35,11 @@ named!(gpr2<&[u8], (GPR8, GPR8)>,
     )
 );
 
-named!(mnemonic<&[u8], String>,
-    chain!(
-        mnemonic: alpha ,
-
-        ||{ String::from_utf8(mnemonic.to_owned()).unwrap() }
-    )
-);
-
 pub fn parse_instruction(line: &str) -> Result<Instruction, String> {
     let mut words = line.split_whitespace();
     let mnemonic = words.next().unwrap();
 
-    let mut operands: Vec<_> = words.collect();
+    let operands: Vec<_> = words.collect();
     let operands = operands.join(" ");
 
     macro_rules! handle_gpr2 {

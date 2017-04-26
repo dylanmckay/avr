@@ -266,11 +266,11 @@ impl Core
         self.do_sreg_branch(k, |sreg| sreg.is_set(sreg::ZERO_FLAG))
     }
 
-    pub fn brbs(&mut self, flag: u8, k: i8) -> Result<(), Error> {
+    pub fn brbs(&mut self, _flag: u8, _k: i8) -> Result<(), Error> {
         unimplemented!();
     }
 
-    pub fn brbc(&mut self, flag: u8, k: i8) -> Result<(), Error> {
+    pub fn brbc(&mut self, _flag: u8, _k: i8) -> Result<(), Error> {
         unimplemented!();
     }
 
