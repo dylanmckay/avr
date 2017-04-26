@@ -1,5 +1,4 @@
 pub mod binary;
-pub mod textual;
 
 pub type Gpr = u8;
 pub type GprPair = u8;

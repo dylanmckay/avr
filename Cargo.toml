@@ -12,10 +12,6 @@ documentation = "https://docs.rs/avr"
 keywords = ["avr", "emulator", "microcontroller", "io", "cpu"]
 
 [dependencies]
-nom = "1.2"
-
-[dev-dependencies]
-stainless = "*"
 
 [[bin]]
 name = "emulator"
