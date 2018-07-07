@@ -7,6 +7,9 @@
 This program emulates an 8-bit AVR microcontroller. It supports the trivial
 C "Hello World!" program.
 
+_NOTE_: This emulator isn't quite complete. One notable thing is that not all status register
+updates are implemented for all instructions (#2).
+
 Given some C++ source.
 
 ```cpp
