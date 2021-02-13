@@ -1,7 +1,7 @@
 [package]
 
 name = "avr"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Dylan McKay <me@dylanmckay.io>"]
 
 description = "AVR emulator"
