@@ -1,13 +1,13 @@
 use regs::Register;
 
-pub const CARRY_FLAG: u8 = (1<<0);
-pub const ZERO_FLAG: u8 = (1<<1);
-pub const NEGATIVE_FLAG: u8 = (1<<2);
-pub const OVERFLOW_FLAG: u8 = (1<<3);
-pub const S_FLAG: u8 = (1<<4);
-pub const HALF_CARRY_FLAG: u8 = (1<<5);
-pub const TRANSFER_FLAG: u8 = (1<<6);
-pub const INTERRUPT_FLAG: u8 = (1<<7);
+pub const CARRY_FLAG: u8 = 1<<0;
+pub const ZERO_FLAG: u8 = 1<<1;
+pub const NEGATIVE_FLAG: u8 = 1<<2;
+pub const OVERFLOW_FLAG: u8 = 1<<3;
+pub const S_FLAG: u8 = 1<<4;
+pub const HALF_CARRY_FLAG: u8 = 1<<5;
+pub const TRANSFER_FLAG: u8 = 1<<6;
+pub const INTERRUPT_FLAG: u8 = 1<<7;
 
 /// The AVR status register.
 #[derive(Clone,Debug,PartialEq,Eq)]

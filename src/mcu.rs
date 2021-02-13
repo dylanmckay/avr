@@ -4,7 +4,7 @@ use addons;
 pub struct Mcu
 {
     pub core: Core,
-    addons: Vec<Box<addons::Addon>>,
+    addons: Vec<Box<dyn addons::Addon>>,
 }
 
 impl Mcu
@@ -16,7 +16,7 @@ impl Mcu
         }
     }
 
-    pub fn attach(&mut self, addon: Box<addons::Addon>) {
+    pub fn attach(&mut self, addon: Box<dyn addons::Addon>) {
         self.addons.push(addon);
     }
 
